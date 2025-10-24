@@ -28,7 +28,11 @@ const EnhancedReportView: React.FC<EnhancedReportViewProps> = ({
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExportCurrentTab = async () => {
-    setIsExporting(true);
+    // PDF export geçici olarak devre dışı (oklch renk sorunu)
+    alert('PDF indirme özelliği şu anda geliştirilmektedir. Ekran görüntüsü alabilir veya sayfayı yazdırabilirsiniz (Ctrl+P).');
+    return;
+    
+    /* setIsExporting(true);
     try {
       const companyName = result.companyInfo?.companyName || 'Şirket';
       await exportToPDF(`report-content-${activeTab}`, {
@@ -41,11 +45,15 @@ const EnhancedReportView: React.FC<EnhancedReportViewProps> = ({
       alert('PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsExporting(false);
-    }
+    } */
   };
 
   const handleExportAllSections = async () => {
-    setIsExporting(true);
+    // PDF export geçici olarak devre dışı (oklch renk sorunu)
+    alert('PDF indirme özelliği şu anda geliştirilmektedir. Yazdır komutu (Ctrl+P) ile PDF olarak kaydedebilirsiniz.');
+    return;
+    
+    /* setIsExporting(true);
     try {
       const companyName = result.companyInfo?.companyName || 'Şirket';
       const sectionIds = [
@@ -66,7 +74,7 @@ const EnhancedReportView: React.FC<EnhancedReportViewProps> = ({
       alert('Tam rapor oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsExporting(false);
-    }
+    } */
   };
 
   const texts = {
