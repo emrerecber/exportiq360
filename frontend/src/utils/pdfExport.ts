@@ -44,12 +44,13 @@ export const exportToPDF = async (elementId: string, options: PDFExportOptions =
   const opt = {
     margin: [10, 10, 10, 10],
     filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: 'jpeg', quality: 0.85 },
     html2canvas: { 
-      scale: 2,
+      scale: 1.5,
       useCORS: true,
       logging: false,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      timeout: 30000
     },
     jsPDF: { 
       unit: 'mm', 
@@ -58,10 +59,10 @@ export const exportToPDF = async (elementId: string, options: PDFExportOptions =
       compress: true
     },
     pagebreak: { 
-      mode: ['avoid-all', 'css', 'legacy'],
+      mode: ['css', 'legacy'],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
-      avoid: ['.pdf-no-break', 'img', 'table', 'svg']
+      avoid: '.pdf-no-break'
     }
   };
 
@@ -166,13 +167,14 @@ export const exportAllSections = async (
   const opt = {
     margin: [10, 10, 10, 10],
     filename: filename,
-    image: { type: 'jpeg', quality: 0.95 },
+    image: { type: 'jpeg', quality: 0.8 },
     html2canvas: { 
-      scale: 2,
+      scale: 1.5,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      windowWidth: 1200
+      windowWidth: 1200,
+      timeout: 60000
     },
     jsPDF: { 
       unit: 'mm', 
@@ -181,7 +183,7 @@ export const exportAllSections = async (
       compress: true
     },
     pagebreak: { 
-      mode: ['avoid-all', 'css', 'legacy'],
+      mode: ['css', 'legacy'],
       before: '.pdf-page-break-before',
       after: '.pdf-page-break-after',
       avoid: '.pdf-no-break'
