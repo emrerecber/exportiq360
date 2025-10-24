@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExportIQ 360 - Professional Assessment</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #0f172a;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        .gradient-corporate {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1d4ed8 100%);
+        }
+        
+        .glass-modern {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .shadow-corporate {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-indicator {
+            position: relative;
+        }
+        
+        .step-indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 50px;
+            height: 2px;
+            background: #e5e7eb;
+            transform: translateY(-50%);
+        }
+        
+        .step-indicator.completed::after {
+            background: var(--success);
+        }
+        
+        .step-indicator:last-child::after {
+            display: none;
+        }
+        
+        .question-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .question-card:hover {
+            border-left-color: var(--primary);
+            transform: translateX(2px);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-circle {
+            transition: stroke-dashoffset 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Comprehensive Question Bank
+        const QUESTION_BANK = {
+            tr: {
+                "digital_strategy": {
+                    title: "Dijital Strateji ve Planlama",
+                    icon: "fas fa-chess",
+                    questions: [
+                        "Şirketinizin e-ihracat için yazılı bir dijital stratejisi var mı?",
+                        "E-ticaret hedefleriniz SMART (Specific, Measurable, Achievable, Relevant, Time-bound) kriterlerine uygun mu?",
+                        "Dijital dönüşüm süreciniz için ayrılmış bütçeniz var mı?",
+                        "Uluslararası pazarlara açılım için pazar araştırması yapıyor musunuz?",
+                        "Dijital strateji sürecinizde danışmanlık alıyor musunuz?"
+                    ]
+                },
+                "technology_infrastructure": {
+                    title: "Teknoloji Altyapısı",
+                    icon: "fas fa-server",
+                    questions: [
+                        "E-ticaret siteniz mobil uyumlu mu?",
+                        "Çoklu para birimi ve ödeme sistemi desteğiniz var mı?",
+                        "ERP sisteminiz e-ticaret platformunuzla entegre mi?",
+                        "Siber güvenlik önlemleriniz uluslararası standartlara uygun mu?",
+                        "Bulut tabanlı hizmetler kullanıyor musunuz?"
+                    ]
+                },
+                "digital_marketing": {
+                    title: "Dijital Pazarlama",
+                    icon: "fas fa-bullhorn",
+                    questions: [
+                        "Sosyal medya platformlarında aktif pazarlama yapıyor musunuz?",
+                        "SEO optimizasyonu için profesyonel destek alıyor musunuz?",
+                        "Google Ads, Facebook Ads gibi platformlarda reklam veriyor musunuz?",
+                        "İçerik pazarlama stratejiniz var mı?",
+                        "E-posta pazarlama kampanyalarınız var mı?"
+                    ]
+                },
+                "logistics_supply": {
+                    title: "Lojistik ve Tedarik Zinciri",
+                    icon: "fas fa-shipping-fast",
+                    questions: [
+                        "Uluslararası kargo anlaşmalarınız var mı?",
+                        "Depo yönetim sistemi kullanıyor musunuz?",
+                        "Stok takibi otomatik mi yapılıyor?",
+                        "Gümrük işlemlerinizi dijital olarak yönetiyor musunuz?",
+                        "Kargo takip sisteminiz müşterilere entegre mi?"
+                    ]
+                },
+                "data_analytics": {
+                    title: "Veri Analitiği ve Raporlama",
+                    icon: "fas fa-chart-bar",
+                    questions: [
+                        "Web sitesi trafiğinizi düzenli olarak analiz ediyor musunuz?",
+                        "Müşteri davranışlarını takip ediyor musunuz?",
+                        "Satış performansınızı KPI'larla ölçüyor musunuz?",
+                        "Veri analizine dayalı kararlar alıyor musunuz?",
+                        "İş zekası araçları kullanıyor musunuz?"
+                    ]
+                },
+                "compliance_legal": {
+                    title: "Uyumluluk ve Yasal Düzenlemeler",
+                    icon: "fas fa-balance-scale",
+                    questions: [
+                        "GDPR, KVKK gibi veri koruma yasalarına uyuyor musunuz?",
+                        "Uluslararası ticaret mevzuatını takip ediyor musunuz?",
+                        "Ürün sertifikasyonlarınız güncel mi?",
+                        "Vergi ve gümrük yükümlülüklerinizi takip ediyor musunuz?",
+                        "Yasal danışmanlık hizmeti alıyor musunuz?"
+                    ]
+                }
+            },
+            en: {
+                "digital_strategy": {
+                    title: "Digital Strategy and Planning",
+                    icon: "fas fa-chess",
+                    questions: [
+                        "Does your company have a written digital strategy for e-export?",
+                        "Are your e-commerce goals aligned with SMART criteria?",
+                        "Do you have a dedicated budget for digital transformation?",
+                        "Do you conduct market research for international expansion?",
+                        "Do you receive consultancy in your digital strategy process?"
+                    ]
+                },
+                "technology_infrastructure": {
+                    title: "Technology Infrastructure",
+                    icon: "fas fa-server",
+                    questions: [
+                        "Is your e-commerce website mobile-friendly?",
+                        "Do you support multiple currencies and payment systems?",
+                        "Is your ERP system integrated with your e-commerce platform?",
+                        "Are your cybersecurity measures compliant with international standards?",
+                        "Do you use cloud-based services?"
+                    ]
+                },
+                "digital_marketing": {
+                    title: "Digital Marketing",
+                    icon: "fas fa-bullhorn",
+                    questions: [
+                        "Do you actively market on social media platforms?",
+                        "Do you receive professional support for SEO optimization?",
+                        "Do you advertise on platforms like Google Ads, Facebook Ads?",
+                        "Do you have a content marketing strategy?",
+                        "Do you run email marketing campaigns?"
+                    ]
+                },
+                "logistics_supply": {
+                    title: "Logistics and Supply Chain",
+                    icon: "fas fa-shipping-fast",
+                    questions: [
+                        "Do you have international shipping agreements?",
+                        "Do you use a warehouse management system?",
+                        "Is inventory tracking automated?",
+                        "Do you manage customs procedures digitally?",
+                        "Is your cargo tracking system integrated for customers?"
+                    ]
+                },
+                "data_analytics": {
+                    title: "Data Analytics and Reporting",
+                    icon: "fas fa-chart-bar",
+                    questions: [
+                        "Do you regularly analyze website traffic?",
+                        "Do you track customer behavior?",
+                        "Do you measure sales performance with KPIs?",
+                        "Do you make data-driven decisions?",
+                        "Do you use business intelligence tools?"
+                    ]
+                },
+                "compliance_legal": {
+                    title: "Compliance and Legal Regulations",
+                    icon: "fas fa-balance-scale",
+                    questions: [
+                        "Are you compliant with data protection laws like GDPR?",
+                        "Do you follow international trade regulations?",
+                        "Are your product certifications up to date?",
+                        "Do you track tax and customs obligations?",
+                        "Do you receive legal consultancy services?"
+                    ]
+                }
+            }
+        };
+
+        function App() {
+            const [language, setLanguage] = useState(null);
+            const [step, setStep] = useState('welcome');
+            const [currentCategory, setCurrentCategory] = useState(0);
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [responses, setResponses] = useState({});
+            const [results, setResults] = useState(null);
+            const [companyInfo, setCompanyInfo] = useState({});
+
+            const categories = Object.keys(QUESTION_BANK[language || 'tr']);
+
+            // Language Selection Screen
+            if (!language) {
+                return <LanguageSelection onSelect={setLanguage} />;
+            }
+
+            // Welcome Screen
+            if (step === 'welcome') {
+                return <WelcomeScreen language={language} onNext={() => setStep('company')} />;
+            }
+
+            // Company Info Screen
+            if (step === 'company') {
+                return <CompanyInfoScreen 
+                    language={language} 
+                    companyInfo={companyInfo}
+                    setCompanyInfo={setCompanyInfo}
+                    onNext={() => setStep('assessment')} 
+                />;
+            }
+
+            // Assessment Screen
+            if (step === 'assessment') {
+                return <AssessmentScreen 
+                    language={language}
+                    currentCategory={currentCategory}
+                    currentQuestion={currentQuestion}
+                    responses={responses}
+                    setResponses={setResponses}
+                    setCurrentCategory={setCurrentCategory}
+                    setCurrentQuestion={setCurrentQuestion}
+                    onComplete={(finalResults) => {
+                        setResults(finalResults);
+                        setStep('results');
+                    }}
+                />;
+            }
+
+            // Results Screen
+            if (step === 'results') {
+                return <ResultsScreen 
+                    language={language}
+                    results={results}
+                    companyInfo={companyInfo}
+                    onRestart={() => {
+                        setStep('welcome');
+                        setCurrentCategory(0);
+                        setCurrentQuestion(0);
+                        setResponses({});
+                        setResults(null);
+                        setCompanyInfo({});
+                    }}
+                />;
+            }
+        }
+
+        function LanguageSelection({ onSelect }) {
+            return (
+                <div className="min-h-screen gradient-corporate flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0">
+                        <div className="absolute top-20 left-20 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+                        <div className="absolute bottom-20 right-20 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+                    </div>
+                    
+                    <div className="glass-modern p-12 rounded-3xl shadow-corporate max-w-lg w-full mx-6 relative z-10 fade-in">
+                        <div className="text-center mb-10">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
+                                <i className="fas fa-globe-americas text-3xl text-blue-600"></i>
+                            </div>
+                            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                                ExportIQ 360
+                            </h1>
+                            <p className="text-xl text-blue-600 font-medium mb-2">Professional Assessment</p>
+                            <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full"></div>
+                        </div>
+                        
+                        <p className="text-gray-700 text-center mb-10 text-lg leading-relaxed">
+                            E-İhracat yetkinliğinizi kapsamlı şekilde değerlendirin ve uluslararası pazarlarda başarılı olun.
+                        </p>
+                        
+                        <div className="space-y-4">
+                            <button
+                                onClick={() => onSelect('tr')}
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3"
+                            >
+                                <i className="fas fa-flag text-lg"></i>
+                                <span>🇹🇷 Türkçe</span>
+                            </button>
+                            <button
+                                onClick={() => onSelect('en')}
+                                className="w-full bg-white text-gray-800 py-4 px-6 rounded-xl font-semibold hover:bg-gray-50 transition-all transform hover:scale-105 shadow-lg border-2 border-gray-200 hover:border-blue-300 flex items-center justify-center space-x-3"
+                            >
+                                <i className="fas fa-flag text-lg"></i>
+                                <span>🇺🇸 English</span>
+                            </button>
+                        </div>
+                        
+                        <div className="text-center mt-8">
+                            <p className="text-sm text-gray-600">
+                                <i className="fas fa-shield-alt mr-2"></i>
+                                Güvenli ve gizli değerlendirme
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function WelcomeScreen({ language, onNext }) {
+            const texts = {
+                tr: {
+                    welcome: "E-İhracat Yetkinlik Değerlendirmesine Hoş Geldiniz",
+                    description: "Bu kapsamlı değerlendirme, şirketinizin e-ihracat alanındaki mevcut durumunu analiz eder ve gelişim önerilerinde bulunur.",
+                    features: [
+                        "30+ Detaylı Soru ile Kapsamlı Analiz",
+                        "6 Ana Kategori ve Alt Başlıklar",
+                        "Sektör Benchmarking",
+                        "Kişiselleştirilmiş Eylem Planı",
+                        "Profesyonel PDF Raporu"
+                    ],
+                    duration: "Tahmini Süre: 15-20 dakika",
+                    start: "Değerlendirmeye Başla"
+                },
+                en: {
+                    welcome: "Welcome to E-Export Competency Assessment",
+                    description: "This comprehensive assessment analyzes your company's current status in e-export and provides development recommendations.",
+                    features: [
+                        "30+ Detailed Questions for Comprehensive Analysis",
+                        "6 Main Categories and Subcategories",
+                        "Industry Benchmarking",
+                        "Personalized Action Plan",
+                        "Professional PDF Report"
+                    ],
+                    duration: "Estimated Time: 15-20 minutes",
+                    start: "Start Assessment"
+                }
+            };
+
+            const t = texts[language];
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+                    <div className="max-w-4xl mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <h1 className="text-5xl font-bold text-gray-900 mb-6">{t.welcome}</h1>
+                            <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">{t.description}</p>
+                        </div>
+
+                        <div className="bg-white rounded-3xl shadow-corporate p-10 mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+                                <i className="fas fa-star text-yellow-500 mr-3"></i>
+                                Değerlendirme Özellikleri
+                            </h2>
+                            
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                                {t.features.map((feature, index) => (
+                                    <div key={index} className="flex items-start space-x-3">
+                                        <i className="fas fa-check-circle text-green-500 text-lg mt-1"></i>
+                                        <span className="text-gray-700">{feature}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-lg text-blue-600 font-medium mb-8">
+                                    <i className="fas fa-clock mr-2"></i>
+                                    {t.duration}
+                                </p>
+                                
+                                <button
+                                    onClick={onNext}
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-12 py-4 rounded-xl text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg"
+                                >
+                                    <i className="fas fa-rocket mr-3"></i>
+                                    {t.start}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function CompanyInfoScreen({ language, companyInfo, setCompanyInfo, onNext }) {
+            const texts = {
+                tr: {
+                    title: "Şirket Bilgileri",
+                    subtitle: "Daha kişiselleştirilmiş analiz için şirket bilgilerinizi paylaşın",
+                    companyName: "Şirket Adı",
+                    sector: "Sektör",
+                    employeeCount: "Çalışan Sayısı",
+                    exportExperience: "İhracat Deneyimi",
+                    website: "Web Sitesi",
+                    next: "Değerlendirmeye Geç",
+                    sectors: [
+                        "Tekstil ve Hazır Giyim",
+                        "Otomotiv",
+                        "Makine ve Ekipman",
+                        "Gıda ve İçecek",
+                        "Kimya ve Plastik",
+                        "Elektronik",
+                        "Diğer"
+                    ],
+                    employees: [
+                        "1-10",
+                        "11-50", 
+                        "51-250",
+                        "251-1000",
+                        "1000+"
+                    ],
+                    experience: [
+                        "Yeni başlayan (0-1 yıl)",
+                        "Tecrübeli (2-5 yıl)",
+                        "Uzman (6-10 yıl)",
+                        "İleri seviye (10+ yıl)"
+                    ]
+                },
+                en: {
+                    title: "Company Information",
+                    subtitle: "Share your company information for more personalized analysis",
+                    companyName: "Company Name",
+                    sector: "Sector",
+                    employeeCount: "Employee Count",
+                    exportExperience: "Export Experience",
+                    website: "Website",
+                    next: "Continue to Assessment",
+                    sectors: [
+                        "Textile and Apparel",
+                        "Automotive", 
+                        "Machinery and Equipment",
+                        "Food and Beverage",
+                        "Chemical and Plastic",
+                        "Electronics",
+                        "Other"
+                    ],
+                    employees: [
+                        "1-10",
+                        "11-50",
+                        "51-250", 
+                        "251-1000",
+                        "1000+"
+                    ],
+                    experience: [
+                        "Beginner (0-1 year)",
+                        "Experienced (2-5 years)",
+                        "Expert (6-10 years)",
+                        "Advanced (10+ years)"
+                    ]
+                }
+            };
+
+            const t = texts[language];
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+                    <div className="max-w-2xl mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <h1 className="text-4xl font-bold text-gray-900 mb-4">{t.title}</h1>
+                            <p className="text-lg text-gray-700">{t.subtitle}</p>
+                        </div>
+
+                        <div className="bg-white rounded-3xl shadow-corporate p-10">
+                            <div className="space-y-8">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">{t.companyName}</label>
+                                    <input
+                                        type="text"
+                                        value={companyInfo.name || ''}
+                                        onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="Şirketinizin adını girin"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">{t.sector}</label>
+                                    <select
+                                        value={companyInfo.sector || ''}
+                                        onChange={(e) => setCompanyInfo({...companyInfo, sector: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    >
+                                        <option value="">Sektör seçin</option>
+                                        {t.sectors.map((sector, index) => (
+                                            <option key={index} value={sector}>{sector}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-3">{t.employeeCount}</label>
+                                        <select
+                                            value={companyInfo.employees || ''}
+                                            onChange={(e) => setCompanyInfo({...companyInfo, employees: e.target.value})}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        >
+                                            <option value="">Seçin</option>
+                                            {t.employees.map((emp, index) => (
+                                                <option key={index} value={emp}>{emp}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-3">{t.exportExperience}</label>
+                                        <select
+                                            value={companyInfo.experience || ''}
+                                            onChange={(e) => setCompanyInfo({...companyInfo, experience: e.target.value})}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        >
+                                            <option value="">Seçin</option>
+                                            {t.experience.map((exp, index) => (
+                                                <option key={index} value={exp}>{exp}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">{t.website}</label>
+                                    <input
+                                        type="url"
+                                        value={companyInfo.website || ''}
+                                        onChange={(e) => setCompanyInfo({...companyInfo, website: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                        placeholder="https://www.sirketiniz.com"
+                                    />
+                                </div>
+
+                                <div className="text-center pt-6">
+                                    <button
+                                        onClick={onNext}
+                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-12 py-4 rounded-xl text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg"
+                                    >
+                                        <i className="fas fa-arrow-right mr-3"></i>
+                                        {t.next}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AssessmentScreen({ language, currentCategory, currentQuestion, responses, setResponses, setCurrentCategory, setCurrentQuestion, onComplete }) {
+            const questions = QUESTION_BANK[language];
+            const categories = Object.keys(questions);
+            const currentCat = categories[currentCategory];
+            const currentQuestions = questions[currentCat]?.questions || [];
+            const totalQuestions = Object.values(questions).reduce((sum, cat) => sum + cat.questions.length, 0);
+            const answeredQuestions = Object.keys(responses).length;
+            const progress = (answeredQuestions / totalQuestions) * 100;
+
+            const handleAnswer = (answer) => {
+                const questionId = `${currentCat}_${currentQuestion}`;
+                setResponses({...responses, [questionId]: answer});
+                
+                // Next question logic
+                if (currentQuestion < currentQuestions.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                } else if (currentCategory < categories.length - 1) {
+                    setCurrentCategory(currentCategory + 1);
+                    setCurrentQuestion(0);
+                } else {
+                    // Assessment complete - analyze results
+                    analyzeResults(responses, language).then(onComplete);
+                }
+            };
+
+            const handlePrevious = () => {
+                if (currentQuestion > 0) {
+                    setCurrentQuestion(currentQuestion - 1);
+                } else if (currentCategory > 0) {
+                    setCurrentCategory(currentCategory - 1);
+                    const prevCat = categories[currentCategory - 1];
+                    setCurrentQuestion(questions[prevCat].questions.length - 1);
+                }
+            };
+
+            const texts = {
+                tr: {
+                    question: "Soru",
+                    of: "/",
+                    category: "Kategori",
+                    previous: "Önceki",
+                    next: "Sonraki",
+                    complete: "Tamamla",
+                    progress: "İlerleme",
+                    answers: {
+                        1: "Kesinlikle Hayır",
+                        2: "Hayır", 
+                        3: "Kısmen",
+                        4: "Evet",
+                        5: "Kesinlikle Evet"
+                    }
+                },
+                en: {
+                    question: "Question",
+                    of: " of ",
+                    category: "Category",
+                    previous: "Previous",
+                    next: "Next",
+                    complete: "Complete",
+                    progress: "Progress",
+                    answers: {
+                        1: "Definitely No",
+                        2: "No",
+                        3: "Partially", 
+                        4: "Yes",
+                        5: "Definitely Yes"
+                    }
+                }
+            };
+
+            const t = texts[language];
+            const currentQuestionText = currentQuestions[currentQuestion];
+            const questionNumber = answeredQuestions + 1;
+            const isLastQuestion = currentCategory === categories.length - 1 && currentQuestion === currentQuestions.length - 1;
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+                    <div className="max-w-4xl mx-auto px-6">
+                        {/* Progress Header */}
+                        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-900">
+                                        {questions[currentCat]?.title}
+                                    </h1>
+                                    <p className="text-gray-600">
+                                        {t.question} {questionNumber}{t.of}{totalQuestions}
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    <div className="text-right">
+                                        <p className="text-sm text-gray-600">{t.progress}</p>
+                                        <p className="text-2xl font-bold text-blue-600">{Math.round(progress)}%</p>
+                                    </div>
+                                    <div className="relative w-16 h-16">
+                                        <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                                            <path className="stroke-current text-gray-300" strokeWidth="3" fill="none"
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                            <path className="stroke-current text-blue-600" strokeWidth="3" fill="none" strokeLinecap="round"
+                                                strokeDasharray={`${progress}, 100`}
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500" 
+                                     style={{width: `${progress}%`}}></div>
+                            </div>
+                        </div>
+
+                        {/* Question Card */}
+                        <div className="bg-white rounded-2xl shadow-lg p-10 mb-8">
+                            <div className="text-center mb-8">
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                                    <i className={`${questions[currentCat]?.icon} text-2xl text-blue-600`}></i>
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                    {currentQuestionText}
+                                </h2>
+                            </div>
+
+                            {/* Answer Options */}
+                            <div className="grid gap-4">
+                                {[1, 2, 3, 4, 5].map((score) => (
+                                    <button
+                                        key={score}
+                                        onClick={() => handleAnswer(score)}
+                                        className="group p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center space-x-4">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                                                score <= 2 ? 'bg-red-500' :
+                                                score === 3 ? 'bg-yellow-500' :
+                                                'bg-green-500'
+                                            }`}>
+                                                {score}
+                                            </div>
+                                            <span className="text-lg font-medium text-gray-700 group-hover:text-blue-700">
+                                                {t.answers[score]}
+                                            </span>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="flex justify-between items-center">
+                            <button
+                                onClick={handlePrevious}
+                                disabled={currentCategory === 0 && currentQuestion === 0}
+                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                            >
+                                <i className="fas fa-chevron-left"></i>
+                                <span>{t.previous}</span>
+                            </button>
+
+                            <div className="flex space-x-2">
+                                {categories.map((_, index) => (
+                                    <div key={index} className={`w-3 h-3 rounded-full ${
+                                        index < currentCategory ? 'bg-green-500' :
+                                        index === currentCategory ? 'bg-blue-500' :
+                                        'bg-gray-300'
+                                    }`}></div>
+                                ))}
+                            </div>
+
+                            <div className="text-right">
+                                <p className="text-sm text-gray-600 mb-1">
+                                    {answeredQuestions}{t.of}{totalQuestions} tamamlandı
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Analysis Function
+        async function analyzeResults(responses, language) {
+            // Calculate category scores
+            const questions = QUESTION_BANK[language];
+            const categoryScores = {};
+            let totalScore = 0;
+            let questionCount = 0;
+
+            Object.keys(questions).forEach(categoryKey => {
+                const categoryQuestions = questions[categoryKey].questions;
+                let categoryTotal = 0;
+                let categoryQuestionCount = 0;
+
+                categoryQuestions.forEach((_, questionIndex) => {
+                    const responseKey = `${categoryKey}_${questionIndex}`;
+                    if (responses[responseKey]) {
+                        categoryTotal += responses[responseKey];
+                        categoryQuestionCount++;
+                        totalScore += responses[responseKey];
+                        questionCount++;
+                    }
+                });
+
+                if (categoryQuestionCount > 0) {
+                    categoryScores[categoryKey] = (categoryTotal / categoryQuestionCount).toFixed(1);
+                }
+            });
+
+            const overallScore = questionCount > 0 ? (totalScore / questionCount).toFixed(1) : 0;
+            
+            // Determine competence level
+            let competenceLevel;
+            if (language === 'tr') {
+                competenceLevel = overallScore < 2.5 ? 'Başlangıç' : 
+                                overallScore < 3.5 ? 'Gelişmekte' : 
+                                overallScore < 4.5 ? 'Yetkin' : 'İleri Seviye';
+            } else {
+                competenceLevel = overallScore < 2.5 ? 'Beginner' : 
+                                overallScore < 3.5 ? 'Developing' : 
+                                overallScore < 4.5 ? 'Competent' : 'Advanced';
+            }
+
+            // Generate insights based on scores
+            const insights = generateInsights(categoryScores, language);
+
+            return {
+                overallScore: parseFloat(overallScore),
+                competenceLevel,
+                categoryScores,
+                insights,
+                totalQuestions: questionCount,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        function generateInsights(scores, language) {
+            const sortedCategories = Object.entries(scores).sort(([,a], [,b]) => b - a);
+            const strongest = sortedCategories[0];
+            const weakest = sortedCategories[sortedCategories.length - 1];
+
+            if (language === 'tr') {
+                return {
+                    strongest: {
+                        category: strongest[0],
+                        score: strongest[1],
+                        message: `En güçlü alanınız ${QUESTION_BANK[language][strongest[0]].title} (${strongest[1]}/5)`
+                    },
+                    weakest: {
+                        category: weakest[0],
+                        score: weakest[1],
+                        message: `Gelişim alanınız ${QUESTION_BANK[language][weakest[0]].title} (${weakest[1]}/5)`
+                    },
+                    recommendations: [
+                        "Güçlü alanlarınızı koruyun ve geliştirin",
+                        "Zayıf alanlarda acil eylem planı oluşturun",
+                        "Düzenli değerlendirme yaparak ilerlemenizi takip edin"
+                    ]
+                };
+            } else {
+                return {
+                    strongest: {
+                        category: strongest[0],
+                        score: strongest[1],
+                        message: `Your strongest area is ${QUESTION_BANK[language][strongest[0]].title} (${strongest[1]}/5)`
+                    },
+                    weakest: {
+                        category: weakest[0],
+                        score: weakest[1],
+                        message: `Your development area is ${QUESTION_BANK[language][weakest[0]].title} (${weakest[1]}/5)`
+                    },
+                    recommendations: [
+                        "Maintain and develop your strong areas",
+                        "Create urgent action plan for weak areas",
+                        "Track progress with regular assessments"
+                    ]
+                };
+            }
+        }
+
+        function ResultsScreen({ language, results, companyInfo, onRestart }) {
+            const texts = {
+                tr: {
+                    title: "Değerlendirme Sonuçları",
+                    subtitle: "E-İhracat yetkinlik analiziniz tamamlandı",
+                    overallScore: "Genel Puan",
+                    competenceLevel: "Yetkinlik Seviyesi",
+                    categoryResults: "Kategori Sonuçları",
+                    insights: "Öngörüler ve Öneriler",
+                    strongest: "En Güçlü Alan",
+                    weakest: "Gelişim Alanı",
+                    recommendations: "Öneriler",
+                    restart: "Yeni Değerlendirme",
+                    downloadReport: "Raporu İndir",
+                    shareResults: "Sonuçları Paylaş"
+                },
+                en: {
+                    title: "Assessment Results",
+                    subtitle: "Your e-export competency analysis is complete",
+                    overallScore: "Overall Score",
+                    competenceLevel: "Competence Level",
+                    categoryResults: "Category Results",
+                    insights: "Insights and Recommendations",
+                    strongest: "Strongest Area",
+                    weakest: "Development Area",
+                    recommendations: "Recommendations",
+                    restart: "New Assessment",
+                    downloadReport: "Download Report",
+                    shareResults: "Share Results"
+                }
+            };
+
+            const t = texts[language];
+            const questions = QUESTION_BANK[language];
+
+            const getScoreColor = (score) => {
+                if (score >= 4.5) return 'text-green-600 bg-green-100';
+                if (score >= 3.5) return 'text-blue-600 bg-blue-100';
+                if (score >= 2.5) return 'text-yellow-600 bg-yellow-100';
+                return 'text-red-600 bg-red-100';
+            };
+
+            const getLevelColor = (level) => {
+                if (level.includes('İleri') || level.includes('Advanced')) return 'bg-green-100 text-green-800';
+                if (level.includes('Yetkin') || level.includes('Competent')) return 'bg-blue-100 text-blue-800';
+                if (level.includes('Gelişmekte') || level.includes('Developing')) return 'bg-yellow-100 text-yellow-800';
+                return 'bg-red-100 text-red-800';
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+                    <div className="max-w-6xl mx-auto px-6">
+                        {/* Header */}
+                        <div className="text-center mb-12">
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                                <i className="fas fa-trophy text-3xl text-green-600"></i>
+                            </div>
+                            <h1 className="text-4xl font-bold text-gray-900 mb-4">{t.title}</h1>
+                            <p className="text-xl text-gray-600">{t.subtitle}</p>
+                            {companyInfo.name && (
+                                <p className="text-lg text-blue-600 font-medium mt-2">{companyInfo.name}</p>
+                            )}
+                        </div>
+
+                        {/* Overall Score Card */}
+                        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
+                            <div className="grid md:grid-cols-2 gap-8 items-center">
+                                <div className="text-center">
+                                    <div className="relative w-40 h-40 mx-auto mb-4">
+                                        <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 36 36">
+                                            <path className="stroke-current text-gray-300" strokeWidth="2" fill="none"
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                            <path className="stroke-current text-blue-600" strokeWidth="2" fill="none" strokeLinecap="round"
+                                                strokeDasharray={`${(results.overallScore/5)*100}, 100`}
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        </svg>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <div className="text-4xl font-bold text-gray-900">{results.overallScore}</div>
+                                                <div className="text-gray-600">/5</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{t.overallScore}</h3>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-4">{t.competenceLevel}</h3>
+                                    <span className={`inline-block px-6 py-3 rounded-full text-lg font-medium ${getLevelColor(results.competenceLevel)}`}>
+                                        {results.competenceLevel}
+                                    </span>
+                                    
+                                    <div className="mt-6 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Toplam Soru:</span>
+                                            <span className="font-semibold">{results.totalQuestions}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Değerlendirme Tarihi:</span>
+                                            <span className="font-semibold">{new Date(results.timestamp).toLocaleDateString('tr-TR')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Category Results */}
+                        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.categoryResults}</h2>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(results.categoryScores).map(([categoryKey, score]) => (
+                                    <div key={categoryKey} className="p-6 border border-gray-200 rounded-2xl hover:shadow-lg transition-all">
+                                        <div className="flex items-center mb-4">
+                                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                                <i className={`${questions[categoryKey]?.icon} text-blue-600`}></i>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900 text-sm">
+                                                    {questions[categoryKey]?.title}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className={`text-2xl font-bold px-3 py-1 rounded-full ${getScoreColor(score)}`}>
+                                                {score}/5
+                                            </span>
+                                            <div className="text-right">
+                                                <div className={`w-16 h-2 bg-gray-200 rounded-full`}>
+                                                    <div className="bg-blue-600 h-2 rounded-full transition-all" 
+                                                         style={{width: `${(score/5)*100}%`}}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Insights */}
+                        <div className="bg-white rounded-3xl shadow-lg p-8 mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.insights}</h2>
+                            
+                            <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                <div className="p-6 bg-green-50 rounded-2xl">
+                                    <div className="flex items-center mb-3">
+                                        <i className="fas fa-star text-green-600 text-xl mr-3"></i>
+                                        <h3 className="text-lg font-semibold text-green-800">{t.strongest}</h3>
+                                    </div>
+                                    <p className="text-green-700">{results.insights.strongest.message}</p>
+                                </div>
+                                
+                                <div className="p-6 bg-blue-50 rounded-2xl">
+                                    <div className="flex items-center mb-3">
+                                        <i className="fas fa-chart-line text-blue-600 text-xl mr-3"></i>
+                                        <h3 className="text-lg font-semibold text-blue-800">{t.weakest}</h3>
+                                    </div>
+                                    <p className="text-blue-700">{results.insights.weakest.message}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="p-6 bg-gray-50 rounded-2xl">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <i className="fas fa-lightbulb text-yellow-500 text-xl mr-3"></i>
+                                    {t.recommendations}
+                                </h3>
+                                <ul className="space-y-2">
+                                    {results.insights.recommendations.map((rec, index) => (
+                                        <li key={index} className="flex items-start">
+                                            <i className="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                                            <span className="text-gray-700">{rec}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={onRestart}
+                                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2"
+                            >
+                                <i className="fas fa-redo"></i>
+                                <span>{t.restart}</span>
+                            </button>
+                            
+                            <button
+                                onClick={() => window.print()}
+                                className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2"
+                            >
+                                <i className="fas fa-download"></i>
+                                <span>{t.downloadReport}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

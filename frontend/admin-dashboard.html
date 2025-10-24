@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExportIQ 360 - Admin Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://unpkg.com/chartjs-plugin-datalabels@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e40af;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+        }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+        }
+        
+        .gradient-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .gradient-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .gradient-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .gradient-purple {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .animate-slideUp {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .metric-card {
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .sidebar-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(37, 99, 235, 0.2);
+            color: #2563eb;
+            font-weight: 600;
+        }
+        
+        .table-row:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Mock admin authentication
+        const ADMIN_CREDENTIALS = {
+            email: 'admin@exportiq360.com',
+            password: 'admin123'
+        };
+
+        // Mock data - gerçek uygulamada API'den gelecek
+        const mockData = {
+            users: [
+                {
+                    id: 1,
+                    name: 'Demo Kullanıcı',
+                    email: 'demo@example.com',
+                    company: 'Demo Şirket',
+                    sector: 'textile',
+                    plan: 'standard',
+                    joinDate: '2024-01-15',
+                    lastActive: '2024-01-25',
+                    revenue: 199,
+                    status: 'active',
+                    testsCount: 3
+                },
+                {
+                    id: 2,
+                    name: 'Ahmet Yılmaz',
+                    email: 'ahmet@textileco.com',
+                    company: 'Textile Co.',
+                    sector: 'textile',
+                    plan: 'premium',
+                    joinDate: '2024-01-10',
+                    lastActive: '2024-01-24',
+                    revenue: 399,
+                    status: 'active',
+                    testsCount: 5
+                },
+                {
+                    id: 3,
+                    name: 'Fatma Demir',
+                    email: 'fatma@foodcorp.com',
+                    company: 'Food Corp',
+                    sector: 'food',
+                    plan: 'basic',
+                    joinDate: '2024-01-12',
+                    lastActive: '2024-01-23',
+                    revenue: 99,
+                    status: 'active',
+                    testsCount: 1
+                },
+                {
+                    id: 4,
+                    name: 'Mehmet Özkan',
+                    email: 'mehmet@techsol.com',
+                    company: 'Tech Solutions',
+                    sector: 'electronics',
+                    plan: 'free',
+                    joinDate: '2024-01-20',
+                    lastActive: '2024-01-22',
+                    revenue: 0,
+                    status: 'active',
+                    testsCount: 0
+                }
+            ],
+            tests: [
+                {
+                    id: 1,
+                    userId: 1,
+                    userName: 'Demo Kullanıcı',
+                    company: 'Demo Şirket',
+                    type: 'e-commerce',
+                    score: 75,
+                    date: '2024-01-20',
+                    duration: 12,
+                    status: 'completed'
+                },
+                {
+                    id: 2,
+                    userId: 2,
+                    userName: 'Ahmet Yılmaz',
+                    company: 'Textile Co.',
+                    type: 'e-export',
+                    score: 88,
+                    date: '2024-01-18',
+                    duration: 18,
+                    status: 'completed'
+                },
+                {
+                    id: 3,
+                    userId: 1,
+                    userName: 'Demo Kullanıcı',
+                    company: 'Demo Şirket',
+                    type: 'e-export',
+                    score: 82,
+                    date: '2024-01-22',
+                    duration: 15,
+                    status: 'completed'
+                },
+                {
+                    id: 4,
+                    userId: 3,
+                    userName: 'Fatma Demir',
+                    company: 'Food Corp',
+                    type: 'e-commerce',
+                    score: 65,
+                    date: '2024-01-23',
+                    duration: 10,
+                    status: 'completed'
+                }
+            ],
+            sales: [
+                {
+                    id: 1,
+                    userId: 2,
+                    userName: 'Ahmet Yılmaz',
+                    company: 'Textile Co.',
+                    plan: 'premium',
+                    amount: 399,
+                    date: '2024-01-10',
+                    status: 'completed',
+                    paymentMethod: 'credit_card'
+                },
+                {
+                    id: 2,
+                    userId: 1,
+                    userName: 'Demo Kullanıcı',
+                    company: 'Demo Şirket',
+                    plan: 'standard',
+                    amount: 199,
+                    date: '2024-01-15',
+                    status: 'completed',
+                    paymentMethod: 'bank_transfer'
+                },
+                {
+                    id: 3,
+                    userId: 3,
+                    userName: 'Fatma Demir',
+                    company: 'Food Corp',
+                    plan: 'basic',
+                    amount: 99,
+                    date: '2024-01-12',
+                    status: 'completed',
+                    paymentMethod: 'credit_card'
+                }
+            ]
+        };
+
+        // Main Admin App
+        function AdminDashboard() {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [activeSection, setActiveSection] = useState('overview');
+            const [stats, setStats] = useState({});
+
+            useEffect(() => {
+                // Check admin session
+                const adminSession = localStorage.getItem('admin_session');
+                if (adminSession) {
+                    setIsAuthenticated(true);
+                    calculateStats();
+                }
+            }, []);
+
+            const calculateStats = () => {
+                const totalUsers = mockData.users.length;
+                const totalRevenue = mockData.sales.reduce((acc, sale) => acc + sale.amount, 0);
+                const totalTests = mockData.tests.length;
+                const avgScore = Math.round(mockData.tests.reduce((acc, test) => acc + test.score, 0) / totalTests);
+                
+                const planDistribution = mockData.users.reduce((acc, user) => {
+                    acc[user.plan] = (acc[user.plan] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const sectorDistribution = mockData.users.reduce((acc, user) => {
+                    acc[user.sector] = (acc[user.sector] || 0) + 1;
+                    return acc;
+                }, {});
+
+                setStats({
+                    totalUsers,
+                    totalRevenue,
+                    totalTests,
+                    avgScore,
+                    planDistribution,
+                    sectorDistribution,
+                    monthlyRevenue: 697, // This month
+                    growthRate: 15.3
+                });
+            };
+
+            if (!isAuthenticated) {
+                return <AdminLogin onLogin={setIsAuthenticated} />;
+            }
+
+            return (
+                <div className="flex h-screen bg-gray-50">
+                    <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+                    <div className="flex-1 overflow-hidden">
+                        <AdminHeader onLogout={() => setIsAuthenticated(false)} />
+                        <div className="p-6 overflow-y-auto h-full">
+                            {activeSection === 'overview' && <OverviewSection stats={stats} />}
+                            {activeSection === 'users' && <UsersSection />}
+                            {activeSection === 'tests' && <TestsSection />}
+                            {activeSection === 'sales' && <SalesSection />}
+                            {activeSection === 'analytics' && <AnalyticsSection stats={stats} />}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Admin Login Component
+        function AdminLogin({ onLogin }) {
+            const [formData, setFormData] = useState({ email: '', password: '' });
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (formData.email === ADMIN_CREDENTIALS.email && formData.password === ADMIN_CREDENTIALS.password) {
+                    localStorage.setItem('admin_session', 'true');
+                    onLogin(true);
+                } else {
+                    setError('Geçersiz admin bilgileri');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
+                    <div className="max-w-md w-full animate-fadeIn">
+                        <div className="glass-effect rounded-2xl p-8">
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-shield-alt"></i>
+                                </div>
+                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Admin Girişi</h2>
+                                <p className="text-gray-600">ExportIQ 360 Yönetim Paneli</p>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                                    {error}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="admin@exportiq360.com"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Şifre</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <button type="submit" className="w-full gradient-primary text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all">
+                                    <i className="fas fa-sign-in-alt mr-2"></i>
+                                    Giriş Yap
+                                </button>
+                            </form>
+
+                            {/* Demo Admin Credentials */}
+                            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800 mb-2"><strong>Demo Admin:</strong></p>
+                                <p className="text-sm text-blue-700">E-posta: admin@exportiq360.com</p>
+                                <p className="text-sm text-blue-700">Şifre: admin123</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Admin Sidebar Component
+        function AdminSidebar({ activeSection, onSectionChange }) {
+            const menuItems = [
+                { key: 'overview', icon: 'fas fa-tachometer-alt', label: 'Genel Bakış' },
+                { key: 'users', icon: 'fas fa-users', label: 'Kullanıcılar' },
+                { key: 'tests', icon: 'fas fa-clipboard-check', label: 'Test Sonuçları' },
+                { key: 'sales', icon: 'fas fa-credit-card', label: 'Satışlar' },
+                { key: 'analytics', icon: 'fas fa-chart-bar', label: 'Analitik' }
+            ];
+
+            return (
+                <div className="w-64 bg-white border-r border-gray-200 h-full">
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold">
+                                E
+                            </div>
+                            <div>
+                                <div className="font-bold text-gray-900">ExportIQ 360</div>
+                                <div className="text-xs text-gray-500">Admin Panel</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav className="p-4">
+                        {menuItems.map(item => (
+                            <div
+                                key={item.key}
+                                className={`sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg mb-2 ${
+                                    activeSection === item.key ? 'active' : 'text-gray-700'
+                                }`}
+                                onClick={() => onSectionChange(item.key)}>
+                                <i className={item.icon}></i>
+                                <span>{item.label}</span>
+                            </div>
+                        ))}
+                    </nav>
+                </div>
+            );
+        }
+
+        // Admin Header Component
+        function AdminHeader({ onLogout }) {
+            return (
+                <header className="bg-white border-b border-gray-200 px-6 py-4">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                            <p className="text-gray-600">ExportIQ 360 Yönetim Paneli</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <div className="text-sm text-gray-600">
+                                <i className="fas fa-clock mr-1"></i>
+                                {new Date().toLocaleDateString('tr-TR')}
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    localStorage.removeItem('admin_session');
+                                    onLogout();
+                                }}
+                                className="text-gray-600 hover:text-red-600 transition-colors">
+                                <i className="fas fa-sign-out-alt mr-1"></i>
+                                Çıkış
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            );
+        }
+
+        // Overview Section Component
+        function OverviewSection({ stats }) {
+            const chartRef = useRef(null);
+            const pieChartRef = useRef(null);
+
+            useEffect(() => {
+                if (stats.planDistribution && chartRef.current) {
+                    createRevenueChart();
+                    createPlanChart();
+                }
+            }, [stats]);
+
+            const createRevenueChart = () => {
+                const ctx = chartRef.current.getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz'],
+                        datasets: [{
+                            label: 'Aylık Gelir (TL)',
+                            data: [120, 190, 300, 500, 600, 697],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '₺';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const createPlanChart = () => {
+                if (!pieChartRef.current) return;
+
+                const ctx = pieChartRef.current.getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Ücretsiz', 'Temel', 'Orta', 'İleri'],
+                        datasets: [{
+                            data: [
+                                stats.planDistribution.free || 0,
+                                stats.planDistribution.basic || 0,
+                                stats.planDistribution.standard || 0,
+                                stats.planDistribution.premium || 0
+                            ],
+                            backgroundColor: ['#9ca3af', '#2563eb', '#f59e0b', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            };
+
+            return (
+                <div className="animate-fadeIn">
+                    {/* Key Metrics */}
+                    <div className="grid md:grid-cols-4 gap-6 mb-8">
+                        <div className="metric-card glass-effect rounded-2xl p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-600 text-sm">Toplam Kullanıcı</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.totalUsers || 0}</p>
+                                    <p className="text-green-600 text-sm">+12% bu ay</p>
+                                </div>
+                                <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center text-white">
+                                    <i className="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="metric-card glass-effect rounded-2xl p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-600 text-sm">Toplam Gelir</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.totalRevenue || 0}₺</p>
+                                    <p className="text-green-600 text-sm">+{stats.growthRate || 0}% bu ay</p>
+                                </div>
+                                <div className="w-12 h-12 gradient-success rounded-full flex items-center justify-center text-white">
+                                    <i className="fas fa-money-bill-wave"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="metric-card glass-effect rounded-2xl p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-600 text-sm">Toplam Test</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.totalTests || 0}</p>
+                                    <p className="text-blue-600 text-sm">Ortalama: {stats.avgScore || 0}%</p>
+                                </div>
+                                <div className="w-12 h-12 gradient-warning rounded-full flex items-center justify-center text-white">
+                                    <i className="fas fa-clipboard-check"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="metric-card glass-effect rounded-2xl p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-gray-600 text-sm">Aylık Gelir</p>
+                                    <p className="text-3xl font-bold text-gray-900">{stats.monthlyRevenue || 0}₺</p>
+                                    <p className="text-purple-600 text-sm">Bu ay</p>
+                                </div>
+                                <div className="w-12 h-12 gradient-purple rounded-full flex items-center justify-center text-white">
+                                    <i className="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Charts */}
+                    <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="glass-effect rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-6">Aylık Gelir Trendi</h3>
+                            <div className="h-80">
+                                <canvas ref={chartRef}></canvas>
+                            </div>
+                        </div>
+
+                        <div className="glass-effect rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-6">Paket Dağılımı</h3>
+                            <div className="h-80">
+                                <canvas ref={pieChartRef}></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Users Section Component
+        function UsersSection() {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [filteredUsers, setFilteredUsers] = useState(mockData.users);
+
+            useEffect(() => {
+                const filtered = mockData.users.filter(user => 
+                    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.company.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                setFilteredUsers(filtered);
+            }, [searchTerm]);
+
+            const getPlanBadge = (plan) => {
+                const badges = {
+                    free: 'bg-gray-100 text-gray-800',
+                    basic: 'bg-blue-100 text-blue-800',
+                    standard: 'bg-orange-100 text-orange-800',
+                    premium: 'bg-purple-100 text-purple-800'
+                };
+                const labels = {
+                    free: 'Ücretsiz',
+                    basic: 'Temel',
+                    standard: 'Orta',
+                    premium: 'İleri'
+                };
+                
+                return (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${badges[plan]}`}>
+                        {labels[plan]}
+                    </span>
+                );
+            };
+
+            return (
+                <div className="animate-fadeIn">
+                    <div className="glass-effect rounded-2xl p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">Kullanıcı Yönetimi</h2>
+                            <div className="flex items-center space-x-4">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Kullanıcı ara..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Kullanıcı</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Şirket</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Paket</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Gelir</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Test</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Son Giriş</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredUsers.map(user => (
+                                        <tr key={user.id} className="table-row border-b border-gray-100">
+                                            <td className="py-4 px-4">
+                                                <div>
+                                                    <div className="font-medium text-gray-900">{user.name}</div>
+                                                    <div className="text-sm text-gray-500">{user.email}</div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="text-gray-900">{user.company}</div>
+                                                <div className="text-sm text-gray-500 capitalize">{user.sector}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                {getPlanBadge(user.plan)}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="font-medium text-gray-900">{user.revenue}₺</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-gray-900">{user.testsCount} test</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-sm text-gray-500">{user.lastActive}</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex space-x-2">
+                                                    <button className="text-blue-600 hover:text-blue-800">
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button className="text-green-600 hover:text-green-800">
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Tests Section Component
+        function TestsSection() {
+            return (
+                <div className="animate-fadeIn">
+                    <div className="glass-effect rounded-2xl p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Test Sonuçları</h2>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Kullanıcı</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Şirket</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Test Türü</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Puan</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Süre</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Tarih</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {mockData.tests.map(test => (
+                                        <tr key={test.id} className="table-row border-b border-gray-100">
+                                            <td className="py-4 px-4">
+                                                <div className="font-medium text-gray-900">{test.userName}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="text-gray-900">{test.company}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    test.type === 'e-commerce' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {test.type === 'e-commerce' ? 'E-Ticaret' : 'E-İhracat'}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center">
+                                                    <span className="font-bold text-lg">{test.score}%</span>
+                                                    <div className={`ml-2 w-2 h-2 rounded-full ${
+                                                        test.score >= 80 ? 'bg-green-500' :
+                                                        test.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                                    }`}></div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-gray-600">{test.duration} dk</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-sm text-gray-500">{test.date}</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex space-x-2">
+                                                    <button className="text-blue-600 hover:text-blue-800">
+                                                        <i className="fas fa-eye"></i>
+                                                    </button>
+                                                    <button className="text-green-600 hover:text-green-800">
+                                                        <i className="fas fa-download"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Sales Section Component  
+        function SalesSection() {
+            return (
+                <div className="animate-fadeIn">
+                    <div className="glass-effect rounded-2xl p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Satış Yönetimi</h2>
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Müşteri</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Şirket</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Paket</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Tutar</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Ödeme</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Tarih</th>
+                                        <th className="text-left py-4 px-4 font-medium text-gray-700">Durum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {mockData.sales.map(sale => (
+                                        <tr key={sale.id} className="table-row border-b border-gray-100">
+                                            <td className="py-4 px-4">
+                                                <div className="font-medium text-gray-900">{sale.userName}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="text-gray-900">{sale.company}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    sale.plan === 'basic' ? 'bg-blue-100 text-blue-800' :
+                                                    sale.plan === 'standard' ? 'bg-orange-100 text-orange-800' :
+                                                    'bg-purple-100 text-purple-800'
+                                                }`}>
+                                                    {sale.plan === 'basic' ? 'Temel' : 
+                                                     sale.plan === 'standard' ? 'Orta' : 'İleri'}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="font-bold text-lg text-green-600">{sale.amount}₺</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-gray-600">
+                                                    {sale.paymentMethod === 'credit_card' ? 'Kredi Kartı' : 'Havale/EFT'}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="text-sm text-gray-500">{sale.date}</span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Tamamlandı
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Sales Summary */}
+                        <div className="mt-8 grid md:grid-cols-3 gap-6">
+                            <div className="bg-green-50 rounded-xl p-6">
+                                <h4 className="font-medium text-green-800 mb-2">Bu Ay Toplam</h4>
+                                <p className="text-2xl font-bold text-green-600">697₺</p>
+                            </div>
+                            <div className="bg-blue-50 rounded-xl p-6">
+                                <h4 className="font-medium text-blue-800 mb-2">Ortalama Sipariş</h4>
+                                <p className="text-2xl font-bold text-blue-600">232₺</p>
+                            </div>
+                            <div className="bg-purple-50 rounded-xl p-6">
+                                <h4 className="font-medium text-purple-800 mb-2">Toplam Satış</h4>
+                                <p className="text-2xl font-bold text-purple-600">3 adet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Analytics Section Component
+        function AnalyticsSection({ stats }) {
+            return (
+                <div className="animate-fadeIn">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Detaylı Analitik</h2>
+                    
+                    <div className="grid lg:grid-cols-2 gap-6 mb-8">
+                        <div className="glass-effect rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4">Sektör Dağılımı</h3>
+                            <div className="space-y-4">
+                                {stats.sectorDistribution && Object.entries(stats.sectorDistribution).map(([sector, count]) => (
+                                    <div key={sector} className="flex items-center justify-between">
+                                        <span className="capitalize text-gray-700">{sector}</span>
+                                        <div className="flex items-center">
+                                            <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                                <div 
+                                                    className="bg-blue-600 h-2 rounded-full"
+                                                    style={{width: `${(count / stats.totalUsers) * 100}%`}}>
+                                                </div>
+                                            </div>
+                                            <span className="font-medium">{count}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="glass-effect rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4">Test Performansı</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-700">Ortalama Puan</span>
+                                    <span className="font-bold text-2xl text-blue-600">{stats.avgScore}%</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-700">Tamamlanma Oranı</span>
+                                    <span className="font-bold text-2xl text-green-600">95%</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-700">Ortalama Süre</span>
+                                    <span className="font-bold text-2xl text-orange-600">14 dk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-effect rounded-2xl p-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">Sistem Metrikleri</h3>
+                        <div className="grid md:grid-cols-4 gap-6">
+                            <div className="text-center">
+                                <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-server"></i>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">99.9%</div>
+                                <div className="text-gray-600">Uptime</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-16 h-16 gradient-success rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-tachometer-alt"></i>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">1.2s</div>
+                                <div className="text-gray-600">Avg Response</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-16 h-16 gradient-warning rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-database"></i>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">2.1GB</div>
+                                <div className="text-gray-600">Storage Used</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-16 h-16 gradient-purple rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-shield-alt"></i>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">0</div>
+                                <div className="text-gray-600">Security Issues</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the main admin app
+        ReactDOM.render(<AdminDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>

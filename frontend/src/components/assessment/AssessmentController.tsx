@@ -1,0 +1,318 @@
+import React, { useState, useEffect } from 'react';
+import { Question, Answer, Category, AssessmentUIState, AssessmentResponse } from '../../types/assessment';
+import { categories, questions } from '../../data/assessmentData';
+import { ScoringSystem } from '../../lib/scoring/calculator';
+import { useToast } from '../../contexts/ToastContext';
+import QuestionCard from './QuestionCard';
+
+interface AssessmentControllerProps {
+  language: 'tr' | 'en';
+  assessmentType?: 'e-commerce' | 'e-export' | 'combined';
+  onComplete: (result: any) => void;
+  onSaveProgress?: (progress: AssessmentResponse) => void;
+}
+
+const AssessmentController: React.FC<AssessmentControllerProps> = ({
+  language,
+  assessmentType = 'e-commerce',
+  onComplete,
+  onSaveProgress
+}) => {
+  const { showToast } = useToast();
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [uiState, setUIState] = useState<AssessmentUIState>({
+    currentQuestionIndex: 0,
+    currentCategoryId: questions[0]?.categoryId || '',
+    isNavigating: false,
+    progress: {
+      answeredQuestions: 0,
+      totalQuestions: questions.length,
+      percentage: 0,
+      categoryProgress: {}
+    },
+    filters: {}
+  });
+
+  const texts = {
+    tr: {
+      categoryNavigation: 'Kategori Navigasyonu',
+      allCategories: 'Tüm Kategoriler',
+      jumpToCategory: 'Kategoriye Git',
+      completed: 'Tamamlandı',
+      remaining: 'Kalan',
+      finishAssessment: 'Değerlendirmeyi Bitir',
+      backToOverview: 'Genel Bakışa Dön'
+    },
+    en: {
+      categoryNavigation: 'Category Navigation',
+      allCategories: 'All Categories',
+      jumpToCategory: 'Jump to Category',
+      completed: 'Completed',
+      remaining: 'Remaining',
+      finishAssessment: 'Finish Assessment',
+      backToOverview: 'Back to Overview'
+    }
+  };
+
+  const t = texts[language];
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentCategory = categories.find(cat => cat.id === currentQuestion?.categoryId);
+  const currentAnswer = answers.find(answer => answer.questionId === currentQuestion?.id);
+
+  // Progress hesaplama
+  useEffect(() => {
+    const categoryProgress: Record<string, number> = {};
+    categories.forEach(category => {
+      const categoryQuestions = questions.filter(q => q.categoryId === category.id);
+      const categoryAnswers = answers.filter(answer => 
+        categoryQuestions.some(q => q.id === answer.questionId)
+      );
+      categoryProgress[category.id] = categoryQuestions.length > 0 
+        ? (categoryAnswers.length / categoryQuestions.length) * 100
+        : 0;
+    });
+
+    setUIState(prev => ({
+      ...prev,
+      currentCategoryId: currentQuestion?.categoryId || '',
+      progress: {
+        answeredQuestions: answers.length,
+        totalQuestions: questions.length,
+        percentage: (answers.length / questions.length) * 100,
+        categoryProgress
+      }
+    }));
+
+    // Otomatik kaydetme
+    if (onSaveProgress && answers.length > 0) {
+      const assessmentResponse: AssessmentResponse = {
+        id: 'current-assessment',
+        answers,
+        startedAt: new Date(), // Bu gerçek uygulamada başlangıç zamanı saklanmalı
+        language,
+        // companyInfo buraya eklenebilir
+      };
+      onSaveProgress(assessmentResponse);
+    }
+  }, [answers, currentQuestion, language, onSaveProgress]);
+
+  const handleAnswer = (answer: Answer) => {
+    setAnswers(prev => {
+      const existingIndex = prev.findIndex(a => a.questionId === answer.questionId);
+      if (existingIndex >= 0) {
+        // Var olan cevabı güncelle
+        const newAnswers = [...prev];
+        newAnswers[existingIndex] = answer;
+        return newAnswers;
+      } else {
+        // Yeni cevap ekle
+        return [...prev, answer];
+      }
+    });
+
+    // Otomatik olarak bir sonraki soruya geç (opsiyonel)
+    setTimeout(() => {
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+    }, 500);
+  };
+
+  const jumpToCategory = (categoryId: string) => {
+    const firstQuestionInCategory = questions.findIndex(q => q.categoryId === categoryId);
+    if (firstQuestionInCategory >= 0) {
+      setCurrentQuestionIndex(firstQuestionInCategory);
+    }
+  };
+
+  const jumpToQuestion = (questionIndex: number) => {
+    if (questionIndex >= 0 && questionIndex < questions.length) {
+      setCurrentQuestionIndex(questionIndex);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else if (answers.length >= questions.length * 0.8) { // En az %80 tamamlanmış ise
+      handleComplete();
+    }
+  };
+
+  const handleComplete = () => {
+    const scoringSystem = new ScoringSystem(categories, questions);
+    const result = scoringSystem.calculateScore(answers);
+    
+    // Add assessment type and company info to result
+    const enhancedResult = {
+      ...result,
+      assessmentType,
+      companyInfo: {
+        companyName: localStorage.getItem('company_name') || undefined,
+        industry: localStorage.getItem('company_industry') || undefined,
+      }
+    };
+    
+    // Save to localStorage for persistence
+    const savedAssessments = JSON.parse(localStorage.getItem('assessments') || '[]');
+    savedAssessments.push(enhancedResult);
+    localStorage.setItem('assessments', JSON.stringify(savedAssessments));
+    
+    showToast('success', '🎉 Değerlendirme tamamlandı! Raporunuz hazırlanıyor...');
+    
+    setTimeout(() => {
+      onComplete(enhancedResult);
+    }, 1000);
+  };
+
+  const [showNavigation, setShowNavigation] = useState(false);
+
+  if (!currentQuestion || !currentCategory) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="relative">
+      {/* Floating Navigation Button */}
+      <button
+        onClick={() => setShowNavigation(!showNavigation)}
+        className="fixed top-4 right-4 z-50 bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300"
+        title={t.categoryNavigation}
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* Navigation Sidebar */}
+      {showNavigation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowNavigation(false)}>
+          <div 
+            className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-gray-800">{t.categoryNavigation}</h3>
+                <button
+                  onClick={() => setShowNavigation(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Overall Progress */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                  <span>{t.completed}: {uiState.progress.answeredQuestions}</span>
+                  <span>{t.remaining}: {uiState.progress.totalQuestions - uiState.progress.answeredQuestions}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="h-2 bg-indigo-600 rounded-full transition-all duration-300"
+                    style={{ width: `${uiState.progress.percentage}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  {Math.round(uiState.progress.percentage)}% {language === 'tr' ? 'tamamlandı' : 'completed'}
+                </p>
+              </div>
+
+              {/* Category List */}
+              <div className="space-y-3">
+                {categories.map(category => {
+                  const categoryQuestions = questions.filter(q => q.categoryId === category.id);
+                  const categoryAnswers = answers.filter(answer => 
+                    categoryQuestions.some(q => q.id === answer.questionId)
+                  );
+                  const progress = uiState.progress.categoryProgress[category.id] || 0;
+                  const isCurrentCategory = category.id === currentCategory.id;
+
+                  return (
+                    <div 
+                      key={category.id}
+                      className={`
+                        p-3 rounded-lg border-2 cursor-pointer transition-all duration-300
+                        ${isCurrentCategory 
+                          ? 'border-indigo-500 bg-indigo-50' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }
+                      `}
+                      onClick={() => {
+                        jumpToCategory(category.id);
+                        setShowNavigation(false);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <h4 className="font-medium text-gray-800 text-sm">
+                            {category.name[language]}
+                          </h4>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {categoryAnswers.length}/{categoryQuestions.length}
+                        </span>
+                      </div>
+                      
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div 
+                          className="h-1.5 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${progress}%`,
+                            backgroundColor: category.color 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Complete Button */}
+              {uiState.progress.percentage >= 80 && (
+                <button
+                  onClick={handleComplete}
+                  className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                >
+                  {t.finishAssessment}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Question Interface */}
+      <QuestionCard
+        question={currentQuestion}
+        currentAnswer={currentAnswer}
+        onAnswer={handleAnswer}
+        questionNumber={currentQuestionIndex + 1}
+        totalQuestions={questions.length}
+        language={language}
+        category={currentCategory}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        hasPrevious={currentQuestionIndex > 0}
+        hasNext={currentQuestionIndex < questions.length - 1 || uiState.progress.percentage >= 80}
+      />
+    </div>
+  );
+};
+
+export default AssessmentController;

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExportIQ 360 - Üyelik ve Platform</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e40af;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+        }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+        }
+        
+        .gradient-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .gradient-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .gradient-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        }
+        
+        .gradient-premium {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .animate-slideUp {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pricing-card {
+            transition: all 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .feature-check {
+            color: #10b981;
+        }
+        
+        .feature-cross {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Assessment Plans
+        const PLANS = {
+            free: {
+                name: 'Ücretsiz',
+                price: 0,
+                currency: 'TL',
+                features: [
+                    'Temel değerlendirme (10 soru)',
+                    'Basit rapor',
+                    'E-posta desteği',
+                    'Sınırlı kategori analizi'
+                ],
+                limitations: [
+                    'Detaylı analiz yok',
+                    'Sektör karşılaştırması yok',
+                    'PDF raporu yok'
+                ],
+                color: 'gray',
+                popular: false
+            },
+            basic: {
+                name: 'Temel',
+                price: 99,
+                currency: 'TL',
+                features: [
+                    'Kapsamlı değerlendirme (25 soru)',
+                    'Detaylı kategori analizi',
+                    'PDF rapor indirme',
+                    'E-posta desteği',
+                    'Temel öneriler'
+                ],
+                limitations: [
+                    'Sektör karşılaştırması yok',
+                    'AI destekli analiz yok'
+                ],
+                color: 'blue',
+                popular: false
+            },
+            standard: {
+                name: 'Orta',
+                price: 199,
+                currency: 'TL',
+                features: [
+                    'Tam değerlendirme (40+ soru)',
+                    'AI destekli analiz',
+                    'Sektör karşılaştırması',
+                    'Detaylı eylem planı',
+                    'Öncelikli destek',
+                    'Ücretsiz güncelleme (3 ay)'
+                ],
+                limitations: [
+                    'Uzman danışmanlığı yok'
+                ],
+                color: 'orange',
+                popular: true
+            },
+            premium: {
+                name: 'İleri',
+                price: 399,
+                currency: 'TL',
+                features: [
+                    'Tüm özellikler dahil',
+                    'Uzman danışmanlığı (1 saat)',
+                    'Özelleştirilmiş stratejik plan',
+                    'Canlı destek',
+                    'Sınırsız yeniden değerlendirme',
+                    'Ücretsiz güncelleme (1 yıl)',
+                    'Şirket içi eğitim materyali'
+                ],
+                limitations: [],
+                color: 'purple',
+                popular: false
+            }
+        };
+
+        // Mock user data (gerçek uygulamada localStorage veya API'den gelecek)
+        const mockUsers = [
+            {
+                id: 1,
+                email: 'demo@example.com',
+                password: 'demo123',
+                name: 'Demo Kullanıcı',
+                company: 'Demo Şirket',
+                plan: 'standard',
+                joinDate: '2024-01-15',
+                tests: [
+                    {
+                        id: 1,
+                        type: 'e-commerce',
+                        score: 75,
+                        date: '2024-01-20',
+                        status: 'completed'
+                    }
+                ]
+            }
+        ];
+
+        // Main App Component
+        function AuthPlatform() {
+            const [currentView, setCurrentView] = useState('landing'); // landing, login, register, dashboard, pricing
+            const [user, setUser] = useState(null);
+            const [formData, setFormData] = useState({});
+            const [selectedPlan, setSelectedPlan] = useState(null);
+
+            useEffect(() => {
+                // Check for existing session
+                const savedUser = localStorage.getItem('exportiq_user');
+                if (savedUser) {
+                    setUser(JSON.parse(savedUser));
+                    setCurrentView('dashboard');
+                }
+            }, []);
+
+            const handleLogin = (loginData) => {
+                // Mock authentication
+                const foundUser = mockUsers.find(u => u.email === loginData.email && u.password === loginData.password);
+                if (foundUser) {
+                    setUser(foundUser);
+                    localStorage.setItem('exportiq_user', JSON.stringify(foundUser));
+                    setCurrentView('dashboard');
+                    return true;
+                }
+                return false;
+            };
+
+            const handleRegister = (registerData) => {
+                // Mock registration
+                const newUser = {
+                    id: Date.now(),
+                    ...registerData,
+                    plan: 'free',
+                    joinDate: new Date().toISOString().split('T')[0],
+                    tests: []
+                };
+                setUser(newUser);
+                localStorage.setItem('exportiq_user', JSON.stringify(newUser));
+                setCurrentView('dashboard');
+            };
+
+            const handleLogout = () => {
+                setUser(null);
+                localStorage.removeItem('exportiq_user');
+                setCurrentView('landing');
+            };
+
+            const handlePurchase = (planKey) => {
+                // Mock purchase process
+                if (user) {
+                    const updatedUser = { ...user, plan: planKey };
+                    setUser(updatedUser);
+                    localStorage.setItem('exportiq_user', JSON.stringify(updatedUser));
+                    alert(`${PLANS[planKey].name} paketini başarıyla satın aldınız!`);
+                } else {
+                    setSelectedPlan(planKey);
+                    setCurrentView('register');
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+                    {currentView === 'landing' && <LandingPage onViewChange={setCurrentView} />}
+                    {currentView === 'login' && <LoginPage onLogin={handleLogin} onViewChange={setCurrentView} />}
+                    {currentView === 'register' && <RegisterPage onRegister={handleRegister} onViewChange={setCurrentView} selectedPlan={selectedPlan} />}
+                    {currentView === 'pricing' && <PricingPage onPurchase={handlePurchase} onViewChange={setCurrentView} user={user} />}
+                    {currentView === 'dashboard' && <Dashboard user={user} onLogout={handleLogout} onViewChange={setCurrentView} />}
+                </div>
+            );
+        }
+
+        // Landing Page Component
+        function LandingPage({ onViewChange }) {
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="glass-effect border-b border-white/20 sticky top-0 z-50">
+                        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold">
+                                    E
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">ExportIQ 360</span>
+                            </div>
+                            <div className="space-x-4">
+                                <button 
+                                    onClick={() => onViewChange('pricing')}
+                                    className="text-gray-600 hover:text-gray-900 font-medium">
+                                    Fiyatlar
+                                </button>
+                                <button 
+                                    onClick={() => onViewChange('login')}
+                                    className="text-gray-600 hover:text-gray-900 font-medium">
+                                    Giriş Yap
+                                </button>
+                                <button 
+                                    onClick={() => onViewChange('register')}
+                                    className="gradient-primary text-white px-6 py-2 rounded-lg font-medium hover:shadow-lg transition-all">
+                                    Ücretsiz Kayıt
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Hero Section */}
+                    <section className="py-20">
+                        <div className="max-w-6xl mx-auto px-4 text-center animate-fadeIn">
+                            <h1 className="text-6xl font-bold text-gray-900 mb-6">
+                                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    E-Ticaret & E-İhracat
+                                </span>
+                                <br />Yetkinlik Değerlendirmesi
+                            </h1>
+                            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                                AI destekli profesyonel değerlendirme sistemi ile şirketinizin dijital ticaret potansiyelini keşfedin.
+                                Uzman analizleri ve actionable insights ile rekabet avantajı kazanın.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button 
+                                    onClick={() => onViewChange('register')}
+                                    className="gradient-primary text-white px-8 py-4 rounded-lg font-medium text-lg hover:shadow-lg transition-all">
+                                    <i className="fas fa-rocket mr-2"></i>
+                                    Ücretsiz Başlayın
+                                </button>
+                                <button 
+                                    onClick={() => onViewChange('pricing')}
+                                    className="bg-white text-gray-900 border-2 border-gray-200 px-8 py-4 rounded-lg font-medium text-lg hover:shadow-lg transition-all">
+                                    <i className="fas fa-eye mr-2"></i>
+                                    Demo'yu İzleyin
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Features Section */}
+                    <section className="py-20 bg-white">
+                        <div className="max-w-6xl mx-auto px-4">
+                            <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
+                                Neden ExportIQ 360?
+                            </h2>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <div className="text-center p-6">
+                                    <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-6">
+                                        <i className="fas fa-brain"></i>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">AI Destekli Analiz</h3>
+                                    <p className="text-gray-600">Gelişmiş yapay zeka algoritmaları ile derinlemesine analiz ve kişiselleştirilmiş öneriler.</p>
+                                </div>
+                                <div className="text-center p-6">
+                                    <div className="w-16 h-16 gradient-success rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-6">
+                                        <i className="fas fa-chart-line"></i>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Kapsamlı Raporlama</h3>
+                                    <p className="text-gray-600">Detaylı kategorize edilmiş analizler, sektör karşılaştırmaları ve eylem planları.</p>
+                                </div>
+                                <div className="text-center p-6">
+                                    <div className="w-16 h-16 gradient-warning rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-6">
+                                        <i className="fas fa-users"></i>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Uzman Desteği</h3>
+                                    <p className="text-gray-600">Deneyimli e-ticaret uzmanlarından birebir danışmanlık ve stratejik rehberlik.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Stats Section */}
+                    <section className="py-20">
+                        <div className="max-w-6xl mx-auto px-4">
+                            <div className="grid md:grid-cols-4 gap-8 text-center">
+                                <div>
+                                    <div className="text-4xl font-bold text-blue-600 mb-2">1000+</div>
+                                    <div className="text-gray-600">Değerlendirilen Şirket</div>
+                                </div>
+                                <div>
+                                    <div className="text-4xl font-bold text-green-600 mb-2">%87</div>
+                                    <div className="text-gray-600">Memnuniyet Oranı</div>
+                                </div>
+                                <div>
+                                    <div className="text-4xl font-bold text-orange-600 mb-2">50+</div>
+                                    <div className="text-gray-600">Farklı Sektör</div>
+                                </div>
+                                <div>
+                                    <div className="text-4xl font-bold text-purple-600 mb-2">24/7</div>
+                                    <div className="text-gray-600">Destek Hizmeti</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer */}
+                    <footer className="bg-gray-900 text-white py-12">
+                        <div className="max-w-6xl mx-auto px-4 text-center">
+                            <div className="flex items-center justify-center space-x-2 mb-4">
+                                <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold">
+                                    E
+                                </div>
+                                <span className="text-xl font-bold">ExportIQ 360</span>
+                            </div>
+                            <p className="text-gray-400">© 2024 ExportIQ 360. Tüm hakları saklıdır.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Login Page Component
+        function LoginPage({ onLogin, onViewChange }) {
+            const [formData, setFormData] = useState({ email: '', password: '' });
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                const success = onLogin(formData);
+                if (!success) {
+                    setError('Geçersiz e-posta veya şifre');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="max-w-md w-full animate-fadeIn">
+                        <div className="glass-effect rounded-2xl p-8">
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-user"></i>
+                                </div>
+                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Giriş Yap</h2>
+                                <p className="text-gray-600">Hesabınıza erişim sağlayın</p>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                                    {error}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="ornek@email.com"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Şifre</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <button type="submit" className="w-full gradient-primary text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all">
+                                    <i className="fas fa-sign-in-alt mr-2"></i>
+                                    Giriş Yap
+                                </button>
+                            </form>
+
+                            <div className="text-center mt-6">
+                                <p className="text-gray-600">
+                                    Hesabınız yok mu? 
+                                    <button 
+                                        onClick={() => onViewChange('register')}
+                                        className="text-blue-600 hover:text-blue-700 font-medium ml-1">
+                                        Ücretsiz Kayıt Olun
+                                    </button>
+                                </p>
+                                <button 
+                                    onClick={() => onViewChange('landing')}
+                                    className="text-gray-500 hover:text-gray-700 mt-2">
+                                    ← Ana Sayfaya Dön
+                                </button>
+                            </div>
+
+                            {/* Demo Login Info */}
+                            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800 mb-2"><strong>Demo Giriş:</strong></p>
+                                <p className="text-sm text-blue-700">E-posta: demo@example.com</p>
+                                <p className="text-sm text-blue-700">Şifre: demo123</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Register Page Component (continued in next part due to length...)
+        function RegisterPage({ onRegister, onViewChange, selectedPlan }) {
+            const [formData, setFormData] = useState({
+                name: '',
+                email: '',
+                password: '',
+                company: '',
+                phone: '',
+                sector: ''
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onRegister(formData);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                    <div className="max-w-md w-full animate-fadeIn">
+                        <div className="glass-effect rounded-2xl p-8">
+                            <div className="text-center mb-8">
+                                <div className="w-16 h-16 gradient-success rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
+                                    <i className="fas fa-user-plus"></i>
+                                </div>
+                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Kayıt Ol</h2>
+                                <p className="text-gray-600">
+                                    {selectedPlan ? `${PLANS[selectedPlan].name} paketi için hesap oluşturun` : 'Ücretsiz hesabınızı oluşturun'}
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                            placeholder="Adınız Soyadınız"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                            placeholder="+90 555 123 45 67"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                        placeholder="ornek@email.com"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Şirket Adı</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.company}
+                                        onChange={(e) => setFormData({...formData, company: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                        placeholder="Şirket Adı"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sektör</label>
+                                    <select
+                                        required
+                                        value={formData.sector}
+                                        onChange={(e) => setFormData({...formData, sector: e.target.value})}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                                        <option value="">Sektör Seçin</option>
+                                        <option value="textile">Tekstil & Konfeksiyon</option>
+                                        <option value="electronics">Elektronik & Teknoloji</option>
+                                        <option value="food">Gıda & İçecek</option>
+                                        <option value="automotive">Otomotiv</option>
+                                        <option value="machinery">Makine & Ekipman</option>
+                                        <option value="other">Diğer</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" className="w-full gradient-success text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all">
+                                    <i className="fas fa-rocket mr-2"></i>
+                                    Hesap Oluştur
+                                </button>
+                            </form>
+
+                            <div className="text-center mt-6">
+                                <p className="text-gray-600">
+                                    Zaten hesabınız var mı? 
+                                    <button 
+                                        onClick={() => onViewChange('login')}
+                                        className="text-blue-600 hover:text-blue-700 font-medium ml-1">
+                                        Giriş Yapın
+                                    </button>
+                                </p>
+                                <button 
+                                    onClick={() => onViewChange('landing')}
+                                    className="text-gray-500 hover:text-gray-700 mt-2">
+                                    ← Ana Sayfaya Dön
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Pricing Page will be in the next part due to length constraints...
+        function PricingPage({ onPurchase, onViewChange, user }) {
+            return (
+                <div className="min-h-screen p-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header */}
+                        <div className="text-center mb-12 animate-fadeIn">
+                            <button 
+                                onClick={() => onViewChange(user ? 'dashboard' : 'landing')}
+                                className="text-gray-500 hover:text-gray-700 mb-4">
+                                ← {user ? 'Dashboard' : 'Ana Sayfa'}
+                            </button>
+                            <h1 className="text-4xl font-bold text-gray-900 mb-4">Fiyatlandırma</h1>
+                            <p className="text-xl text-gray-600">İhtiyaçlarınıza uygun paketi seçin</p>
+                        </div>
+
+                        {/* Pricing Cards */}
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slideUp">
+                            {Object.entries(PLANS).map(([key, plan]) => (
+                                <div key={key} className={`pricing-card glass-effect rounded-2xl p-6 relative ${plan.popular ? 'ring-2 ring-blue-500' : ''}`}>
+                                    {plan.popular && (
+                                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                            <span className="gradient-primary text-white px-4 py-1 rounded-full text-sm font-medium">
+                                                En Popüler
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                                        <div className="text-3xl font-bold text-gray-900">
+                                            {plan.price === 0 ? 'Ücretsiz' : `${plan.price} ${plan.currency}`}
+                                        </div>
+                                        {plan.price > 0 && <div className="text-gray-500 text-sm">tek seferlik</div>}
+                                    </div>
+
+                                    <div className="space-y-3 mb-6">
+                                        {plan.features.map((feature, index) => (
+                                            <div key={index} className="flex items-start">
+                                                <i className="fas fa-check feature-check mr-2 mt-1 text-sm"></i>
+                                                <span className="text-gray-700 text-sm">{feature}</span>
+                                            </div>
+                                        ))}
+                                        {plan.limitations.map((limitation, index) => (
+                                            <div key={index} className="flex items-start">
+                                                <i className="fas fa-times feature-cross mr-2 mt-1 text-sm"></i>
+                                                <span className="text-gray-500 text-sm">{limitation}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <button 
+                                        onClick={() => onPurchase(key)}
+                                        className={`w-full py-3 rounded-lg font-medium transition-all ${
+                                            plan.color === 'gray' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' :
+                                            plan.color === 'blue' ? 'gradient-primary text-white hover:shadow-lg' :
+                                            plan.color === 'orange' ? 'gradient-warning text-white hover:shadow-lg' :
+                                            'gradient-premium text-white hover:shadow-lg'
+                                        }`}>
+                                        {user && user.plan === key ? 'Mevcut Paket' : 
+                                         plan.price === 0 ? 'Ücretsiz Başla' : 'Satın Al'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Feature Comparison */}
+                        <div className="mt-16 glass-effect rounded-2xl p-8">
+                            <h3 className="text-2xl font-bold text-center text-gray-900 mb-8">
+                                Detaylı Karşılaştırma
+                            </h3>
+                            {/* This would be a detailed comparison table */}
+                            <div className="text-center text-gray-600">
+                                <i className="fas fa-info-circle mr-2"></i>
+                                Detaylı özellik karşılaştırması için destek ekibimizle iletişime geçin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Dashboard Component
+        function Dashboard({ user, onLogout, onViewChange }) {
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <header className="glass-effect border-b border-white/20 sticky top-0 z-50">
+                        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center text-white font-bold">
+                                    E
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">ExportIQ 360</span>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <span className="text-gray-600">Hoş geldin, {user.name}</span>
+                                <button 
+                                    onClick={onLogout}
+                                    className="text-gray-600 hover:text-gray-900">
+                                    <i className="fas fa-sign-out-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="max-w-6xl mx-auto p-4">
+                        {/* User Info */}
+                        <div className="grid md:grid-cols-3 gap-6 mb-8">
+                            <div className="glass-effect rounded-2xl p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Hesap Bilgileri</h3>
+                                <div className="space-y-2 text-sm">
+                                    <p><strong>Şirket:</strong> {user.company}</p>
+                                    <p><strong>Plan:</strong> {PLANS[user.plan].name}</p>
+                                    <p><strong>Üyelik:</strong> {user.joinDate}</p>
+                                </div>
+                            </div>
+                            <div className="glass-effect rounded-2xl p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Test İstatistikleri</h3>
+                                <div className="space-y-2 text-sm">
+                                    <p><strong>Tamamlanan:</strong> {user.tests.length}</p>
+                                    <p><strong>Ortalama Puan:</strong> {user.tests.length > 0 ? Math.round(user.tests.reduce((acc, test) => acc + test.score, 0) / user.tests.length) : 0}%</p>
+                                </div>
+                            </div>
+                            <div className="glass-effect rounded-2xl p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Hızlı İşlemler</h3>
+                                <div className="space-y-2">
+                                    <button 
+                                        onClick={() => window.open('/assessment-platform.html', '_blank')}
+                                        className="w-full gradient-primary text-white py-2 rounded-lg text-sm font-medium">
+                                        Yeni Test Başlat
+                                    </button>
+                                    <button 
+                                        onClick={() => onViewChange('pricing')}
+                                        className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium">
+                                        Paket Değiştir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Test History */}
+                        <div className="glass-effect rounded-2xl p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-6">Test Geçmişi</h3>
+                            {user.tests.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <i className="fas fa-clipboard-list text-4xl mb-4"></i>
+                                    <p>Henüz test almadınız. İlk testinizi başlatın!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {user.tests.map(test => (
+                                        <div key={test.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <div className="font-medium">{test.type === 'e-commerce' ? 'E-Ticaret' : 'E-İhracat'} Değerlendirmesi</div>
+                                                <div className="text-sm text-gray-500">{test.date}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-lg">{test.score}%</div>
+                                                <div className="text-sm text-green-600">Tamamlandı</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the main app
+        ReactDOM.render(<AuthPlatform />, document.getElementById('root'));
+    </script>
+</body>
+</html>
