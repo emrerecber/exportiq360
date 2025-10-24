@@ -19,11 +19,10 @@ export default function Dashboard() {
   }, []);
 
   if (!user) {
-    navigate('/login');
     return null;
   }
 
-  const currentPlan = PLANS[user.plan];
+  const currentPlan = PLANS[user.plan] || PLANS['free_trial'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
