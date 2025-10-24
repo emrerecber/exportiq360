@@ -1,6 +1,22 @@
 import { Plans } from '../types/auth';
 
 export const PLANS: Plans = {
+  free_trial: {
+    name: 'Ücretsiz Deneme',
+    price: 0,
+    currency: '₺',
+    features: [
+      '10 soruluk hızlı değerlendirme',
+      'Temel yetkinlik raporu',
+      '7 gün platform erişimi'
+    ],
+    limitations: [
+      'Detaylı analiz yok',
+      'PDF rapor yok'
+    ],
+    color: 'gray',
+    popular: false
+  },
   ecommerce: {
     name: 'E-Ticaret Assessment',
     price: 499,
