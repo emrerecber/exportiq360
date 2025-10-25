@@ -1,5 +1,7 @@
 // E-Ticaret Olgunluk Değerlendirme Sistemi - Type Definitions
 
+export type Channel = 'domestic_website' | 'domestic_marketplace' | 'international_website' | 'global_marketplace' | 'general';
+
 export interface Question {
   id: string;
   categoryId: string;
@@ -9,6 +11,8 @@ export interface Question {
   };
   questionNumber: number;
   weight?: number; // Sorunun ağırlığı (default: 1)
+  channels?: Channel[]; // Bu soru hangi kanallara ait (boşsa tüm kanallara)
+  isFreeTrialQuestion?: boolean; // Ücretsiz denemede sorulacak mı?
 }
 
 export interface Category {
