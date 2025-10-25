@@ -113,6 +113,20 @@ const NewPricing = () => {
         border: 'border-purple-500',
         hover: 'hover:border-purple-600'
       },
+      orange: {
+        gradient: 'from-orange-500 to-orange-600',
+        bg: 'bg-orange-50',
+        text: 'text-orange-600',
+        border: 'border-orange-500',
+        hover: 'hover:border-orange-600'
+      },
+      gray: {
+        gradient: 'from-gray-500 to-gray-600',
+        bg: 'bg-gray-50',
+        text: 'text-gray-600',
+        border: 'border-gray-500',
+        hover: 'hover:border-gray-600'
+      },
       gradient: {
         gradient: 'from-blue-600 to-indigo-600',
         bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
@@ -121,7 +135,7 @@ const NewPricing = () => {
         hover: 'hover:border-indigo-600'
       }
     };
-    return colors[color];
+    return colors[color] || colors.blue;
   };
 
   return (
