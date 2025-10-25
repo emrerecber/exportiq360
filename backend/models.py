@@ -83,6 +83,7 @@ class AIAnalysisRequest(BaseModel):
     user_id: str
     assessment_id: str
     language: str = "tr"
+    questions: Optional[List[Dict[str, Any]]] = None  # Frontend sends questions data
 
 class QuestionAnalysis(BaseModel):
     question_id: str

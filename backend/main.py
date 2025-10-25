@@ -273,7 +273,7 @@ async def get_all_user_responses(user_id: str):
 # ==================== AI Report Generation Endpoints ====================
 
 @app.post("/report/generate", response_model=Dict)
-async def generate_report(request: AIAnalysisRequest, questions: List[Dict]):
+async def generate_report(request: AIAnalysisRequest):
     """
     Kullanıcının yanıtlarını analiz edip AI destekli kapsamlı rapor üret
     
@@ -304,7 +304,7 @@ async def generate_report(request: AIAnalysisRequest, questions: List[Dict]):
             user_id=request.user_id,
             assessment_id=request.assessment_id,
             user_responses=user_responses,
-            questions_data=questions,
+            questions_data=request.questions or [],
             package_type=package_type,
             language=request.language
         )
