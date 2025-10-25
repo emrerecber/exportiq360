@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
+from datetime import datetime
 
 class AssessmentScores(BaseModel):
     strategy: float
@@ -52,3 +53,61 @@ class InvoiceResponse(BaseModel):
     invoice_url: Optional[str] = None
     total_amount: Optional[float] = None
     error: Optional[str] = None
+
+# Question and Response Models
+class Question(BaseModel):
+    id: str
+    question: Dict[str, str]  # {"en": "...", "tr": "..."}
+    category: str
+    channels: List[str] = Field(default_factory=list)  # ["ecommerce", "eexport", "combined"]
+    is_free_trial_question: bool = False
+    order: int
+
+class UserResponse(BaseModel):
+    user_id: str
+    user_email: str
+    assessment_id: str
+    question_id: str
+    answer: int  # 1-5 rating
+    timestamp: Optional[datetime] = None
+    package_type: str  # "free_trial", "ecommerce", "eexport", "combined"
+
+class SaveResponseRequest(BaseModel):
+    user_id: str
+    user_email: str
+    assessment_id: str
+    responses: List[Dict[str, Any]]  # [{question_id, answer}, ...]
+    package_type: str
+
+class AIAnalysisRequest(BaseModel):
+    user_id: str
+    assessment_id: str
+    language: str = "tr"
+
+class QuestionAnalysis(BaseModel):
+    question_id: str
+    question_text: str
+    user_answer: int
+    ai_comment: str
+    category: str
+
+class ChannelScore(BaseModel):
+    channel: str
+    score: float
+    max_score: float
+    percentage: float
+    level: str  # "Başlangıç", "Orta", "İleri", "Uzman"
+
+class ComprehensiveReport(BaseModel):
+    user_id: str
+    assessment_id: str
+    package_type: str
+    overall_score: float
+    channel_scores: List[ChannelScore]
+    category_scores: Dict[str, float]
+    question_analyses: List[QuestionAnalysis]
+    strengths: List[str]
+    weaknesses: List[str]
+    recommendations: List[str]
+    action_plan: Dict[str, List[str]]
+    generated_at: datetime

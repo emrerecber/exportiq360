@@ -1,11 +1,16 @@
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from models import AssessmentScores, AnalysisResult, InvoiceRequest, InvoiceResponse
+from models import (
+    AssessmentScores, AnalysisResult, InvoiceRequest, InvoiceResponse,
+    SaveResponseRequest, AIAnalysisRequest, ComprehensiveReport
+)
 from gpt_engine import GPTAnalyzer
 from parasut_service import ParasutService
+from database_service import db_service
+from report_service import report_service
 import os
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List, Dict
 
 load_dotenv()
 
@@ -18,7 +23,12 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Frontend URLs
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:3000",
+        "https://exportiq360.netlify.app",  # Production frontend
+        os.getenv("FRONTEND_URL", "")
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -184,6 +194,153 @@ async def payment_webhook(
             "status": "error",
             "message": f"Invoice creation failed: {str(e)}"
         }
+
+# ==================== Assessment Response Endpoints ====================
+
+@app.post("/responses/save")
+async def save_responses(request: SaveResponseRequest):
+    """
+    Kullanıcının assessment yanıtlarını kaydet
+    """
+    try:
+        result = db_service.save_responses_batch(
+            user_id=request.user_id,
+            user_email=request.user_email,
+            assessment_id=request.assessment_id,
+            responses=request.responses,
+            package_type=request.package_type
+        )
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "message": f"{result['saved_count']} responses saved successfully",
+                "saved_count": result["saved_count"],
+                "total_count": result["total_count"]
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result.get("error", "Failed to save responses"))
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save responses: {str(e)}"
+        )
+
+@app.get("/responses/{user_id}/{assessment_id}")
+async def get_responses(user_id: str, assessment_id: str):
+    """
+    Kullanıcının belirli bir assessment için yanıtlarını getir
+    """
+    try:
+        responses = db_service.get_user_responses(user_id, assessment_id)
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "assessment_id": assessment_id,
+            "responses": responses,
+            "count": len(responses)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get responses: {str(e)}"
+        )
+
+@app.get("/responses/{user_id}")
+async def get_all_user_responses(user_id: str):
+    """
+    Kullanıcının tüm assessment'larını getir
+    """
+    try:
+        assessments = db_service.get_all_user_assessments(user_id)
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "assessments": assessments,
+            "count": len(assessments)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get user responses: {str(e)}"
+        )
+
+# ==================== AI Report Generation Endpoints ====================
+
+@app.post("/report/generate", response_model=Dict)
+async def generate_report(request: AIAnalysisRequest, questions: List[Dict]):
+    """
+    Kullanıcının yanıtlarını analiz edip AI destekli kapsamlı rapor üret
+    
+    Request body should include:
+    - user_id: User identifier
+    - assessment_id: Assessment identifier
+    - language: "tr" or "en"
+    - questions: Array of question objects from frontend
+    """
+    try:
+        # Get user responses from database
+        user_responses = db_service.get_user_responses(
+            request.user_id, 
+            request.assessment_id
+        )
+        
+        if not user_responses:
+            raise HTTPException(
+                status_code=404,
+                detail="No responses found for this assessment"
+            )
+        
+        # Determine package type from responses
+        package_type = user_responses[0].get("package_type", "combined")
+        
+        # Generate comprehensive report
+        report = report_service.generate_comprehensive_report(
+            user_id=request.user_id,
+            assessment_id=request.assessment_id,
+            user_responses=user_responses,
+            questions_data=questions,
+            package_type=package_type,
+            language=request.language
+        )
+        
+        # Convert to dict for JSON serialization
+        report_dict = report.model_dump(mode='json')
+        
+        return {
+            "status": "success",
+            "report": report_dict
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Report generation failed: {str(e)}"
+        )
+
+@app.get("/stats")
+async def get_stats():
+    """
+    Genel istatistikler - admin için
+    """
+    try:
+        stats = db_service.get_stats()
+        return {
+            "status": "success",
+            "stats": stats
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get stats: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn
