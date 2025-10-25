@@ -132,6 +132,8 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
     if (user?.id && user?.email) {
       try {
         setIsSaving(true);
+        // Convert answer value to number: yes=5, no=1, unknown=3
+        const numericValue = answer.value === 'yes' ? 5 : answer.value === 'no' ? 1 : 3;
         await saveResponses({
           user_id: user.id,
           user_email: user.email,
@@ -139,7 +141,7 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
           responses: [
             {
               question_id: answer.questionId,
-              answer: answer.value
+              answer: numericValue
             }
           ],
           package_type: user.plan || 'free_trial'
@@ -214,10 +216,14 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
           user_id: user.id,
           user_email: user.email,
           assessment_id: assessmentId,
-          responses: answers.map(a => ({
-            question_id: a.questionId,
-            answer: a.value
-          })),
+          responses: answers.map(a => {
+            // Convert answer value to number: yes=5, no=1, unknown=3
+            const numericValue = a.value === 'yes' ? 5 : a.value === 'no' ? 1 : 3;
+            return {
+              question_id: a.questionId,
+              answer: numericValue
+            };
+          }),
           package_type: user.plan || 'free_trial'
         });
       } catch (error) {
