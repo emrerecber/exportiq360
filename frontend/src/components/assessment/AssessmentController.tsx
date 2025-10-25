@@ -291,7 +291,7 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
               {/* Category List */}
               <div className="space-y-3">
                 {categories.map(category => {
-                  const categoryQuestions = questions.filter(q => q.categoryId === category.id);
+                  const categoryQuestions = filteredQuestions.filter(q => q.categoryId === category.id);
                   const categoryAnswers = answers.filter(answer => 
                     categoryQuestions.some(q => q.id === answer.questionId)
                   );
@@ -362,13 +362,13 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
         currentAnswer={currentAnswer}
         onAnswer={handleAnswer}
         questionNumber={currentQuestionIndex + 1}
-        totalQuestions={questions.length}
+        totalQuestions={filteredQuestions.length}
         language={language}
         category={currentCategory}
         onPrevious={handlePrevious}
         onNext={handleNext}
         hasPrevious={currentQuestionIndex > 0}
-        hasNext={currentQuestionIndex < questions.length - 1 || uiState.progress.percentage >= 80}
+        hasNext={currentQuestionIndex < filteredQuestions.length - 1 || uiState.progress.percentage >= 80}
       />
     </div>
   );
