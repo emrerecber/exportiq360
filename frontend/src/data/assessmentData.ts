@@ -113,7 +113,8 @@ export const questions: Question[] = [
       tr: 'Şirketinizin yazılı bir e-ticaret stratejisi var mı?',
       en: 'Does your company have a written e-commerce strategy?'
     },
-    weight: 1.5
+    weight: 1.5,
+    isFreeTrialQuestion: true
   },
   {
     id: 's2',
