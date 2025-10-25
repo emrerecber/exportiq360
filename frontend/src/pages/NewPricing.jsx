@@ -9,6 +9,23 @@ const NewPricing = () => {
   // Convert PLANS to package format for this component
   const packages = [
     {
+      id: 'free_trial',
+      name: PLANS.free_trial.name,
+      price: PLANS.free_trial.price,
+      duration: '5-7 dakika',
+      questions: '10',
+      description: 'Sistemimizi ücretsiz deneyin ve temel değerlendirme alın',
+      color: PLANS.free_trial.color,
+      channels: [
+        { name: 'Temel Sorular', included: true },
+        { name: 'Detaylı Analiz', included: false },
+        { name: 'PDF Rapor', included: false }
+      ],
+      features: PLANS.free_trial.features,
+      notIncluded: PLANS.free_trial.limitations,
+      isFree: true
+    },
+    {
       id: 'ecommerce',
       name: PLANS.ecommerce.name,
       price: PLANS.ecommerce.price,
@@ -244,10 +261,18 @@ const NewPricing = () => {
                       </div>
                     )}
                     <div className="flex items-baseline">
-                      <span className={`text-5xl font-bold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
-                        {pkg.price} ₺
-                      </span>
-                      <span className="text-gray-500 ml-2">/ tek seferlik</span>
+                      {pkg.isFree ? (
+                        <span className="text-5xl font-bold text-green-600">
+                          ÜCRETSİZ
+                        </span>
+                      ) : (
+                        <>
+                          <span className={`text-5xl font-bold bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
+                            {pkg.price} ₺
+                          </span>
+                          <span className="text-gray-500 ml-2">/ tek seferlik</span>
+                        </>
+                      )}
                     </div>
                     <p className="text-gray-600 mt-2">{pkg.questions} soru • {pkg.duration}</p>
                   </div>
@@ -294,12 +319,14 @@ const NewPricing = () => {
                   <button
                     onClick={() => navigate('/register', { state: { selectedPackage: pkg.id } })}
                     className={`w-full py-4 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl ${
-                      pkg.popular
+                      pkg.isFree
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : pkg.popular
                         ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700'
                         : `bg-gradient-to-r ${colors.gradient} text-white hover:opacity-90`
                     }`}
                   >
-                    Hemen Başlayın
+                    {pkg.isFree ? 'Ücretsiz Dene' : 'Hemen Başlayın'}
                   </button>
                 </div>
               </div>
