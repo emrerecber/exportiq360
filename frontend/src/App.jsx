@@ -18,6 +18,7 @@ import PromoManagement from './pages/admin/PromoManagement';
 import SocialMediaManagement from './pages/admin/SocialMediaManagement';
 import Checkout from './pages/Checkout';
 import ReportPage from './pages/ReportPage';
+import ComprehensiveReport from './pages/ComprehensiveReport';
 import InvoiceManagement from './pages/InvoiceManagement';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -47,6 +48,7 @@ function App() {
           <Route path="/assessment/combined" element={<ProtectedRoute><AssessmentPage assessmentType="combined" /></ProtectedRoute>} />
           <Route path="/assessment" element={<Navigate to="/assessment-type" replace />} />
           <Route path="/report" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+          <Route path="/report/:assessmentId" element={<ProtectedRoute><ComprehensiveReport /></ProtectedRoute>} />
           
           {/* Legal Pages */}
           <Route path="/about" element={<About />} />

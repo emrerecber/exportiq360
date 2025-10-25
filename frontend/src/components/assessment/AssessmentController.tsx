@@ -5,6 +5,7 @@ import { ScoringSystem } from '../../lib/scoring/calculator';
 import { useToast } from '../../contexts/ToastContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { filterQuestionsByPlan } from '../../utils/questionFilter';
+import { saveResponses } from '../../services/api';
 import QuestionCard from './QuestionCard';
 
 interface AssessmentControllerProps {
@@ -31,6 +32,11 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
   
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [assessmentId] = useState<string>(() => {
+    // Generate unique assessment ID
+    return `assessment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  });
+  const [isSaving, setIsSaving] = useState(false);
   const [uiState, setUIState] = useState<AssessmentUIState>({
     currentQuestionIndex: 0,
     currentCategoryId: filteredQuestions[0]?.categoryId || '',
@@ -108,7 +114,7 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
     }
   }, [answers, currentQuestion, language, onSaveProgress]);
 
-  const handleAnswer = (answer: Answer) => {
+  const handleAnswer = async (answer: Answer) => {
     setAnswers(prev => {
       const existingIndex = prev.findIndex(a => a.questionId === answer.questionId);
       if (existingIndex >= 0) {
@@ -121,6 +127,30 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
         return [...prev, answer];
       }
     });
+
+    // Backend'e kaydet
+    if (user?.id && user?.email) {
+      try {
+        setIsSaving(true);
+        await saveResponses({
+          user_id: user.id,
+          user_email: user.email,
+          assessment_id: assessmentId,
+          responses: [
+            {
+              question_id: answer.questionId,
+              answer: answer.value
+            }
+          ],
+          package_type: user.plan || 'free_trial'
+        });
+      } catch (error) {
+        console.error('Error saving response:', error);
+        // Hata durumunda kullanıcıyı bilgilendir ama devam et
+      } finally {
+        setIsSaving(false);
+      }
+    }
 
     // Otomatik olarak bir sonraki soruya geç (opsiyonel)
     setTimeout(() => {
@@ -157,13 +187,14 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const scoringSystem = new ScoringSystem(categories, filteredQuestions);
     const result = scoringSystem.calculateScore(answers);
     
-    // Add assessment type and company info to result
+    // Add assessment type, company info, and assessment ID to result
     const enhancedResult = {
       ...result,
+      assessmentId,
       assessmentType,
       companyInfo: {
         companyName: localStorage.getItem('company_name') || undefined,
@@ -175,6 +206,24 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
     const savedAssessments = JSON.parse(localStorage.getItem('assessments') || '[]');
     savedAssessments.push(enhancedResult);
     localStorage.setItem('assessments', JSON.stringify(savedAssessments));
+    
+    // Son kez tüm yanıtları backend'e kaydet
+    if (user?.id && user?.email) {
+      try {
+        await saveResponses({
+          user_id: user.id,
+          user_email: user.email,
+          assessment_id: assessmentId,
+          responses: answers.map(a => ({
+            question_id: a.questionId,
+            answer: a.value
+          })),
+          package_type: user.plan || 'free_trial'
+        });
+      } catch (error) {
+        console.error('Error saving final responses:', error);
+      }
+    }
     
     showToast('success', '🎉 Değerlendirme tamamlandı! Raporunuz hazırlanıyor...');
     

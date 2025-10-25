@@ -52,7 +52,15 @@ export default function AssessmentPage({ assessmentType = 'e-commerce' }: Assess
         <AssessmentController 
           language={language}
           assessmentType={assessmentType}
-          onComplete={setResult}
+          onComplete={(completedResult) => {
+            // Assessment tamamlandı, AI rapor sayfasına yönlendir
+            if (completedResult.assessmentId) {
+              navigate(`/report/${completedResult.assessmentId}`);
+            } else {
+              // Fallback: Eski rapor sayfasını göster
+              setResult(completedResult);
+            }
+          }}
           onSaveProgress={(progress) => {
             localStorage.setItem('assessment-progress', JSON.stringify(progress));
           }}
