@@ -158,6 +158,12 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
     setTimeout(() => {
       if (currentQuestionIndex < filteredQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
+      } else {
+        // Son soru yanıtlandı - tüm soruları yanıtladıysa otomatik tamamla
+        const totalAnswered = answers.length + 1; // Yeni cevap dahil
+        if (totalAnswered >= filteredQuestions.length) {
+          handleComplete();
+        }
       }
     }, 500);
   };
