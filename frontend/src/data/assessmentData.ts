@@ -123,7 +123,8 @@ export const questions: Question[] = [
     text: {
       tr: 'E-ticaret hedefleriniz ölçülebilir KPI\'lar ile tanımlanmış mı?',
       en: 'Are your e-commerce goals defined with measurable KPIs?'
-    }
+    },
+    isFreeTrialQuestion: true
   },
   {
     id: 's3',
@@ -162,7 +163,8 @@ export const questions: Question[] = [
       tr: 'E-ticaret siteniz mobil uyumlu mu?',
       en: 'Is your e-commerce site mobile-friendly?'
     },
-    weight: 1.5
+    weight: 1.5,
+    isFreeTrialQuestion: true
   },
   {
     id: 't2',
@@ -181,7 +183,8 @@ export const questions: Question[] = [
       tr: 'SSL sertifikası ve güvenlik önlemleri mevcut mu?',
       en: 'Do you have SSL certificate and security measures in place?'
     },
-    weight: 1.3
+    weight: 1.3,
+    isFreeTrialQuestion: true
   },
   {
     id: 't4',
@@ -220,7 +223,8 @@ export const questions: Question[] = [
       tr: 'SEO optimizasyonu düzenli olarak yapılıyor mu?',
       en: 'Is SEO optimization done regularly?'
     },
-    weight: 1.3
+    weight: 1.3,
+    isFreeTrialQuestion: true
   },
   {
     id: 'm2',
@@ -229,7 +233,8 @@ export const questions: Question[] = [
     text: {
       tr: 'Google Ads veya sosyal medya reklamları kullanılıyor mu?',
       en: 'Are Google Ads or social media advertisements used?'
-    }
+    },
+    isFreeTrialQuestion: true
   },
   {
     id: 'm3',
@@ -277,7 +282,8 @@ export const questions: Question[] = [
       tr: 'Stok yönetim sisteminiz var mı?',
       en: 'Do you have an inventory management system?'
     },
-    weight: 1.4
+    weight: 1.4,
+    isFreeTrialQuestion: true
   },
   {
     id: 'o2',
@@ -287,7 +293,8 @@ export const questions: Question[] = [
       tr: 'Kargo entegrasyonlarınız mevcut mu?',
       en: 'Do you have shipping integrations available?'
     },
-    weight: 1.2
+    weight: 1.2,
+    isFreeTrialQuestion: true
   },
   {
     id: 'o3',
@@ -326,7 +333,8 @@ export const questions: Question[] = [
       tr: 'Google Analytics kurulu ve aktif kullanılıyor mu?',
       en: 'Is Google Analytics installed and actively used?'
     },
-    weight: 1.5
+    weight: 1.5,
+    isFreeTrialQuestion: true
   },
   {
     id: 'a2',
@@ -410,7 +418,8 @@ export const questions: Question[] = [
       tr: 'Checkout süreci basit ve hızlı mı?',
       en: 'Is the checkout process simple and fast?'
     },
-    weight: 1.3
+    weight: 1.3,
+    isFreeTrialQuestion: true
   },
   {
     id: 'c6',
@@ -431,7 +440,8 @@ export const questions: Question[] = [
       tr: 'Çoklu ödeme seçenekleri sunuluyor mu?',
       en: 'Are multiple payment options offered?'
     },
-    weight: 1.4
+    weight: 1.4,
+    isFreeTrialQuestion: true
   },
   {
     id: 'f2',
