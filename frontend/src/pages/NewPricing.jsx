@@ -229,7 +229,7 @@ const NewPricing = () => {
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {packages.map((pkg) => {
             const colors = getColorClasses(pkg.color);
             return (
@@ -346,6 +346,7 @@ const NewPricing = () => {
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left py-4 px-6 text-gray-700 font-semibold">Özellik</th>
+                  <th className="text-center py-4 px-6 text-gray-500 font-semibold">Deneme</th>
                   <th className="text-center py-4 px-6 text-gray-700 font-semibold">E-Ticaret</th>
                   <th className="text-center py-4 px-6 text-gray-700 font-semibold">E-İhracat</th>
                   <th className="text-center py-4 px-6 text-blue-700 font-semibold">Kapsamlı 🌟</th>
@@ -353,55 +354,71 @@ const NewPricing = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr>
-                  <td className="py-4 px-6 text-gray-700">Kendi Web Siteniz (Yurtiçi)</td>
-                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
-                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
-                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
+                  <td className="py-4 px-6 text-gray-700">Soru Sayısı</td>
+                  <td className="text-center py-4 px-6 font-semibold">10</td>
+                  <td className="text-center py-4 px-6 font-semibold">50+</td>
+                  <td className="text-center py-4 px-6 font-semibold">60+</td>
+                  <td className="text-center py-4 px-6 font-semibold">110+</td>
                 </tr>
                 <tr className="bg-gray-50">
-                  <td className="py-4 px-6 text-gray-700">Ulusal Pazaryerleri</td>
+                  <td className="py-4 px-6 text-gray-700">Kendi Web Siteniz (Yurtiçi)</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
                 <tr>
+                  <td className="py-4 px-6 text-gray-700">Ulusal Pazaryerleri</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
+                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
+                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
+                </tr>
+                <tr className="bg-gray-50">
                   <td className="py-4 px-6 text-gray-700">Kendi Web Siteniz (Uluslararası)</td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
-                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
-                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="py-4 px-6 text-gray-700">Global Pazaryerleri</td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-gray-700">Kanal Bazlı Skorlama</td>
-                  <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
+                  <td className="py-4 px-6 text-gray-700">Global Pazaryerleri</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
                 <tr className="bg-gray-50">
-                  <td className="py-4 px-6 text-gray-700">Detaylı PDF Rapor</td>
+                  <td className="py-4 px-6 text-gray-700">Kanal Bazlı Skorlama</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
                 <tr>
-                  <td className="py-4 px-6 text-gray-700">90 Gün Erişim</td>
+                  <td className="py-4 px-6 text-gray-700">Detaylı PDF Rapor</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
                 <tr className="bg-gray-50">
+                  <td className="py-4 px-6 text-gray-700">Platform Erişimi</td>
+                  <td className="text-center py-4 px-6">7 gün</td>
+                  <td className="text-center py-4 px-6">90 gün</td>
+                  <td className="text-center py-4 px-6">90 gün</td>
+                  <td className="text-center py-4 px-6">90 gün</td>
+                </tr>
+                <tr>
                   <td className="py-4 px-6 text-gray-700">Öncelikli Destek</td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">✓</span></td>
                 </tr>
-                <tr>
+                <tr className="bg-gray-50">
                   <td className="py-4 px-6 text-gray-700">Danışmanlık İndirimi</td>
+                  <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-gray-300 text-xl">✗</span></td>
                   <td className="text-center py-4 px-6"><span className="text-green-500 text-xl">%20</span></td>
