@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Question, Answer, Category, AssessmentUIState, AssessmentResponse } from '../../types/assessment';
 import { categories, questions } from '../../data/assessmentData';
 import { ScoringSystem } from '../../lib/scoring/calculator';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { filterQuestionsByPlan } from '../../utils/questionFilter';
 import QuestionCard from './QuestionCard';
 
 interface AssessmentControllerProps {
@@ -19,15 +21,23 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
   onSaveProgress
 }) => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  
+  // Kullanıcının paketine göre soruları filtrele
+  const filteredQuestions = useMemo(() => {
+    const plan = user?.plan || 'free_trial';
+    return filterQuestionsByPlan(plan as any);
+  }, [user?.plan]);
+  
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [uiState, setUIState] = useState<AssessmentUIState>({
     currentQuestionIndex: 0,
-    currentCategoryId: questions[0]?.categoryId || '',
+    currentCategoryId: filteredQuestions[0]?.categoryId || '',
     isNavigating: false,
     progress: {
       answeredQuestions: 0,
-      totalQuestions: questions.length,
+      totalQuestions: filteredQuestions.length,
       percentage: 0,
       categoryProgress: {}
     },
@@ -57,7 +67,7 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
 
   const t = texts[language];
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = filteredQuestions[currentQuestionIndex];
   const currentCategory = categories.find(cat => cat.id === currentQuestion?.categoryId);
   const currentAnswer = answers.find(answer => answer.questionId === currentQuestion?.id);
 
@@ -65,7 +75,7 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
   useEffect(() => {
     const categoryProgress: Record<string, number> = {};
     categories.forEach(category => {
-      const categoryQuestions = questions.filter(q => q.categoryId === category.id);
+      const categoryQuestions = filteredQuestions.filter(q => q.categoryId === category.id);
       const categoryAnswers = answers.filter(answer => 
         categoryQuestions.some(q => q.id === answer.questionId)
       );
@@ -79,8 +89,8 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
       currentCategoryId: currentQuestion?.categoryId || '',
       progress: {
         answeredQuestions: answers.length,
-        totalQuestions: questions.length,
-        percentage: (answers.length / questions.length) * 100,
+        totalQuestions: filteredQuestions.length,
+        percentage: (answers.length / filteredQuestions.length) * 100,
         categoryProgress
       }
     }));
@@ -114,21 +124,21 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
 
     // Otomatik olarak bir sonraki soruya geç (opsiyonel)
     setTimeout(() => {
-      if (currentQuestionIndex < questions.length - 1) {
+      if (currentQuestionIndex < filteredQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       }
     }, 500);
   };
 
   const jumpToCategory = (categoryId: string) => {
-    const firstQuestionInCategory = questions.findIndex(q => q.categoryId === categoryId);
+    const firstQuestionInCategory = filteredQuestions.findIndex(q => q.categoryId === categoryId);
     if (firstQuestionInCategory >= 0) {
       setCurrentQuestionIndex(firstQuestionInCategory);
     }
   };
 
   const jumpToQuestion = (questionIndex: number) => {
-    if (questionIndex >= 0 && questionIndex < questions.length) {
+    if (questionIndex >= 0 && questionIndex < filteredQuestions.length) {
       setCurrentQuestionIndex(questionIndex);
     }
   };
@@ -140,15 +150,15 @@ const AssessmentController: React.FC<AssessmentControllerProps> = ({
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
+    if (currentQuestionIndex < filteredQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-    } else if (answers.length >= questions.length * 0.8) { // En az %80 tamamlanmış ise
+    } else if (answers.length >= filteredQuestions.length * 0.8) { // En az %80 tamamlanmış ise
       handleComplete();
     }
   };
 
   const handleComplete = () => {
-    const scoringSystem = new ScoringSystem(categories, questions);
+    const scoringSystem = new ScoringSystem(categories, filteredQuestions);
     const result = scoringSystem.calculateScore(answers);
     
     // Add assessment type and company info to result
