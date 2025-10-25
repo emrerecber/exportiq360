@@ -156,7 +156,8 @@ class ReportService:
             if not question:
                 continue
             
-            category = question.get("category", "general")
+            # Frontend uses 'categoryId' not 'category'
+            category = question.get("categoryId", question.get("category", "general"))
             if category not in category_scores:
                 category_scores[category] = 0
                 category_counts[category] = 0
@@ -188,9 +189,12 @@ class ReportService:
             if not question:
                 continue
             
-            question_text = question["question"].get(language, question["question"].get("tr", ""))
+            # Frontend uses 'text' not 'question'
+            question_text_dict = question.get("text", question.get("question", {}))
+            question_text = question_text_dict.get(language, question_text_dict.get("tr", ""))
             user_answer = resp["answer"]
-            category = question.get("category", "general")
+            # Frontend uses 'categoryId' not 'category'
+            category = question.get("categoryId", question.get("category", "general"))
             
             # Generate AI comment
             ai_comment = self._generate_ai_comment(
