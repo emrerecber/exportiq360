@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Kullanıcısı Oluştur - ExportIQ 360</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-indigo-600 mb-2">🔐 Admin Oluştur</h1>
+      <p class="text-gray-600 text-sm">ExportIQ 360 için admin hesabı oluşturun</p>
+    </div>
+
+    <form id="adminForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Ad Soyad</label>
+        <input 
+          type="text" 
+          id="name" 
+          required
+          placeholder="Örn: Ahmet Yılmaz"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+        <input 
+          type="email" 
+          id="email" 
+          required
+          placeholder="admin@sirketiniz.com"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Şirket</label>
+        <input 
+          type="text" 
+          id="company" 
+          required
+          placeholder="Şirket Adı"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+      </div>
+
+      <button 
+        type="submit"
+        class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+      >
+        👑 Admin Hesabı Oluştur
+      </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden">
+      <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4">
+        <p class="text-green-800 font-medium mb-2">✅ Admin hesabı oluşturuldu!</p>
+        <p class="text-sm text-gray-700 mb-3">Artık bu bilgilerle giriş yapabilirsiniz:</p>
+        <div class="bg-white p-3 rounded border border-green-200 text-sm">
+          <p><strong>Email:</strong> <span id="resultEmail" class="text-indigo-600"></span></p>
+          <p class="mt-1 text-gray-600 text-xs">Admin paneline erişmek için Dashboard'a gidin.</p>
+        </div>
+        <a 
+          href="/login" 
+          class="mt-4 block w-full text-center bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          Giriş Sayfasına Git
+        </a>
+      </div>
+    </div>
+
+    <div class="mt-6 text-center">
+      <a href="/" class="text-sm text-gray-600 hover:text-indigo-600">← Ana Sayfaya Dön</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('adminForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const company = document.getElementById('company').value;
+      
+      // Admin kullanıcısı oluştur
+      const adminUser = {
+        id: 'admin-' + Date.now(),
+        email: email,
+        name: name,
+        company: company,
+        companyName: company,
+        plan: 'combined',
+        role: 'admin',
+        joinDate: new Date().toISOString(),
+        assessments: [],
+        trialCompleted: true
+      };
+      
+      // localStorage'a kaydet
+      localStorage.setItem('exportiq_user', JSON.stringify(adminUser));
+      
+      // Sonucu göster
+      document.getElementById('resultEmail').textContent = email;
+      document.getElementById('adminForm').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
