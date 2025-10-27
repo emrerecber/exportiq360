@@ -22,12 +22,20 @@ const Checkout: React.FC = () => {
   const [promoCode, setPromoCode] = useState(state?.promoCode || '');
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [invoiceType, setInvoiceType] = useState<'individual' | 'corporate'>('individual');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'google_pay' | 'apple_pay'>('credit_card');
   const [billingInfo, setBillingInfo] = useState({
     firstName: '',
     lastName: '',
     email: user?.email || '',
     phone: '',
     identityNumber: '',
+    // Corporate fields
+    companyName: '',
+    taxOffice: '',
+    taxNumber: '',
+    companyAddress: '',
+    // Address fields
     address: '',
     city: '',
     country: 'Türkiye',
@@ -220,6 +228,43 @@ const Checkout: React.FC = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Payment Form */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Invoice Type Selection */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Fatura Tipi</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setInvoiceType('individual')}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    invoiceType === 'individual'
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="font-semibold">Bireysel Fatura</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setInvoiceType('corporate')}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    invoiceType === 'corporate'
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span className="font-semibold">Kurumsal Fatura</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Billing Information */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Fatura Bilgileri</h2>
@@ -273,19 +318,64 @@ const Checkout: React.FC = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    TC Kimlik No *
-                  </label>
-                  <input
-                    type="text"
-                    value={billingInfo.identityNumber}
-                    onChange={(e) => setBillingInfo({ ...billingInfo, identityNumber: e.target.value })}
-                    maxLength={11}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
+                {invoiceType === 'individual' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      TC Kimlik No *
+                    </label>
+                    <input
+                      type="text"
+                      value={billingInfo.identityNumber}
+                      onChange={(e) => setBillingInfo({ ...billingInfo, identityNumber: e.target.value })}
+                      maxLength={11}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Firma Fatura Ünvanı *
+                      </label>
+                      <input
+                        type="text"
+                        value={billingInfo.companyName}
+                        onChange={(e) => setBillingInfo({ ...billingInfo, companyName: e.target.value })}
+                        placeholder="Örn: ABC Teknoloji A.Ş."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Vergi Dairesi *
+                      </label>
+                      <input
+                        type="text"
+                        value={billingInfo.taxOffice}
+                        onChange={(e) => setBillingInfo({ ...billingInfo, taxOffice: e.target.value })}
+                        placeholder="Örn: Kadıköy"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Vergi Numarası *
+                      </label>
+                      <input
+                        type="text"
+                        value={billingInfo.taxNumber}
+                        onChange={(e) => setBillingInfo({ ...billingInfo, taxNumber: e.target.value })}
+                        maxLength={10}
+                        placeholder="10 haneli vergi numarası"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Şehir *
@@ -313,7 +403,59 @@ const Checkout: React.FC = () => {
               </div>
             </div>
 
+            {/* Payment Method Selection */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Ödeme Yöntemi</h2>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('credit_card')}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    paymentMethod === 'credit_card'
+                      ? 'border-indigo-600 bg-indigo-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="text-center">
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <span className="text-sm font-medium">Kredi Kartı</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('google_pay')}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    paymentMethod === 'google_pay'
+                      ? 'border-indigo-600 bg-indigo-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">G</div>
+                    <span className="text-sm font-medium">Google Pay</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('apple_pay')}
+                  className={`p-4 border-2 rounded-lg transition-all ${
+                    paymentMethod === 'apple_pay'
+                      ? 'border-indigo-600 bg-indigo-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2"></div>
+                    <span className="text-sm font-medium">Apple Pay</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Card Information */}
+            {paymentMethod === 'credit_card' && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Kart Bilgileri</h2>
               <form onSubmit={handlePayment}>
@@ -429,6 +571,31 @@ const Checkout: React.FC = () => {
                 </button>
               </form>
             </div>
+            )}
+
+            {/* Alternative Payment Info */}
+            {(paymentMethod === 'google_pay' || paymentMethod === 'apple_pay') && (
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">
+                  {paymentMethod === 'google_pay' ? '📱' : ''}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {paymentMethod === 'google_pay' ? 'Google Pay' : 'Apple Pay'} ile Öde
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Ödeme işlemi için cihazınızdaki {paymentMethod === 'google_pay' ? 'Google Pay' : 'Apple Pay'} uygulaması kullanılacaktır.
+                </p>
+                <button
+                  onClick={handlePayment}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'İşleniyor...' : `₺${total.toFixed(2)} Öde`}
+                </button>
+              </div>
+            </div>
+            )}
 
             {/* Security Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
