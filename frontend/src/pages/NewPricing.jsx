@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { PLANS } from '../data/plans';
 
 const NewPricing = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [billingCycle, setBillingCycle] = useState('onetime'); // Always onetime for this product
 
   // Convert PLANS to package format for this component
@@ -317,7 +319,14 @@ const NewPricing = () => {
 
                   {/* CTA Button */}
                   <button
-                    onClick={() => navigate('/register', { state: { selectedPackage: pkg.id } })}
+                    onClick={() => {
+                      // If user is logged in, go to checkout, otherwise register
+                      if (isAuthenticated) {
+                        navigate('/checkout', { state: { selectedPackage: pkg.id } });
+                      } else {
+                        navigate('/register', { state: { selectedPackage: pkg.id } });
+                      }
+                    }}
                     className={`w-full py-4 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl ${
                       pkg.isFree
                         ? 'bg-green-600 text-white hover:bg-green-700'
@@ -461,10 +470,16 @@ const NewPricing = () => {
               İletişime Geçin
             </Link>
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => {
+                if (isAuthenticated) {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/register');
+                }
+              }}
               className="bg-blue-800 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-900 transition-all shadow-lg"
             >
-              Ücretsiz Hesap Oluşturun
+              {isAuthenticated ? 'Dashboard\'a Git' : 'Ücretsiz Hesap Oluşturun'}
             </button>
           </div>
         </div>
