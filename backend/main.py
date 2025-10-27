@@ -213,6 +213,30 @@ async def payment_webhook(
             "message": f"Invoice creation failed: {str(e)}"
         }
 
+# ==================== Helper Functions ====================
+
+# Helper function to get current user from token
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Verify JWT token and return current user"""
+    token = credentials.credentials
+    payload = auth_service.verify_token(token)
+    
+    if not payload:
+        raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş token")
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Geçersiz token")
+    
+    user = auth_service.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    
+    return user
+
 # ==================== Assessment Response Endpoints ====================
 
 @app.post("/responses/save")
@@ -396,28 +420,6 @@ class LoginResponse(BaseModel):
     user: dict
     token: str
     message: str
-
-# Helper function to get current user from token
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    """Verify JWT token and return current user"""
-    token = credentials.credentials
-    payload = auth_service.verify_token(token)
-    
-    if not payload:
-        raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş token")
-    
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Geçersiz token")
-    
-    user = auth_service.get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
-    
-    return user
 
 @app.post("/auth/register")
 async def register(request: RegisterRequest, db: Session = Depends(get_db)):
