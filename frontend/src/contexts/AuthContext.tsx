@@ -28,81 +28,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
-    // Mock login - gerçek uygulamada API çağrısı
-    // Test kullanıcıları:
-    // Admin: admin@exportiq.com / admin123
-    // User: user@test.com / user123
-    // Free Trial: trial@test.com / trial123
+    // Real API call to backend
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     
-    let mockUser: User;
-    
-    if (credentials.email === 'admin@exportiq.com') {
-      // Admin user - tüm özelliklere erişim
-      mockUser = {
-        id: 'admin-1',
-        email: credentials.email,
-        name: 'Admin User',
-        company: 'ExportIQ 360',
-        plan: 'combined',
-        role: 'admin',
-        joinDate: new Date().toISOString(),
-        assessments: [],
-        trialCompleted: true
-      };
-    } else if (credentials.email === 'trial@test.com') {
-      // Free trial user - sadece 10 soruluk assessment
-      mockUser = {
-        id: 'trial-1',
-        email: credentials.email,
-        name: 'Trial User',
-        company: 'Test Company',
-        plan: 'free_trial',
-        role: 'free_trial',
-        joinDate: new Date().toISOString(),
-        assessments: [],
-        trialCompleted: false
-      };
-    } else {
-      // Regular user - satın aldığı pakete göre
-      mockUser = {
-        id: Date.now().toString(),
-        email: credentials.email,
-        name: 'Demo User',
-        company: 'Demo Company',
-        plan: 'combined',
-        role: 'user',
-        joinDate: new Date().toISOString(),
-        assessments: [],
-        trialCompleted: true
-      };
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Giriş başarısız');
     }
+
+    const data = await response.json();
+    const { user: userData, token } = data;
     
-    setUser(mockUser);
-    localStorage.setItem('exportiq_user', JSON.stringify(mockUser));
+    // Store user and token
+    setUser(userData);
+    localStorage.setItem('exportiq_user', JSON.stringify(userData));
+    localStorage.setItem('exportiq_token', token);
   };
 
   const register = async (data: RegisterData) => {
-    // Mock register - gerçek uygulamada API çağrısı
-    // Yeni kullanıcılar free_trial ile başlar
-    const newUser: User = {
-      id: Date.now().toString(),
-      email: data.email,
-      name: data.name,
-      company: data.company,
-      plan: 'free_trial',
-      role: 'free_trial',
-      joinDate: new Date().toISOString(),
-      assessments: [],
-      trialCompleted: false
-    };
+    // Real API call to backend
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     
-    setUser(newUser);
-    localStorage.setItem('exportiq_user', JSON.stringify(newUser));
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Kayıt başarısız');
+    }
+
+    const responseData = await response.json();
+    const { user: userData, token } = responseData;
+    
+    // Store user and token
+    setUser(userData);
+    localStorage.setItem('exportiq_user', JSON.stringify(userData));
+    localStorage.setItem('exportiq_token', token);
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('exportiq_user');
+    localStorage.removeItem('exportiq_token');
   };
 
   const updateUser = (updatedUser: User) => {

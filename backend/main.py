@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr
 from models import (
     AssessmentScores, AnalysisResult, InvoiceRequest, InvoiceResponse,
     SaveResponseRequest, AIAnalysisRequest, ComprehensiveReport
@@ -8,6 +11,8 @@ from gpt_engine import GPTAnalyzer
 from parasut_service import ParasutService
 from database_service import db_service
 from report_service import report_service
+from database import get_db, init_db
+from auth_service import auth_service
 import os
 from dotenv import load_dotenv
 from typing import Optional, List, Dict
@@ -19,6 +24,19 @@ app = FastAPI(
     description="E-İhracat Botu MVP - AI-powered e-export competence analysis",
     version="1.0.0"
 )
+
+# Security
+security = HTTPBearer()
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on startup"""
+    try:
+        init_db()
+        print("[STARTUP] Database initialized successfully")
+    except Exception as e:
+        print(f"[STARTUP] Database initialization failed: {e}")
 
 # Configure CORS
 app.add_middleware(
@@ -337,6 +355,164 @@ async def generate_report(request: AIAnalysisRequest):
             status_code=500,
             detail=f"Rapor oluşturulurken hata: {str(e)}"
         )
+
+# ==================== Authentication Endpoints ====================
+
+# Request/Response Models
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    company: Optional[str] = None
+    phone: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    user: dict
+    token: str
+    message: str
+
+# Helper function to get current user from token
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Verify JWT token and return current user"""
+    token = credentials.credentials
+    payload = auth_service.verify_token(token)
+    
+    if not payload:
+        raise HTTPException(status_code=401, detail="Geçersiz veya süresi dolmuş token")
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Geçersiz token")
+    
+    user = auth_service.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    
+    return user
+
+@app.post("/auth/register")
+async def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    """
+    Kayıt ol - yeni kullanıcı oluştur
+    """
+    try:
+        print(f"[AUTH] Registration attempt for {request.email}")
+        
+        # Create user
+        user = auth_service.create_user(
+            db=db,
+            email=request.email,
+            password=request.password,
+            name=request.name,
+            company_name=request.company,
+            phone=request.phone
+        )
+        
+        # Create JWT token
+        token = auth_service.create_access_token(
+            data={"sub": user.id, "email": user.email, "role": user.role.value}
+        )
+        
+        print(f"[AUTH] User registered successfully: {user.email}")
+        
+        return {
+            "user": auth_service.user_to_dict(user),
+            "token": token,
+            "message": "Kayıt başarılı"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"[AUTH] Registration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Kayıt sırasında hata: {str(e)}")
+
+@app.post("/auth/login")
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    """
+    Giriş yap
+    """
+    try:
+        print(f"[AUTH] Login attempt for {request.email}")
+        
+        # Authenticate user
+        user = auth_service.authenticate_user(db, request.email, request.password)
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Email veya şifre yanlış")
+        
+        # Create JWT token
+        token = auth_service.create_access_token(
+            data={"sub": user.id, "email": user.email, "role": user.role.value}
+        )
+        
+        print(f"[AUTH] User logged in successfully: {user.email}")
+        
+        return {
+            "user": auth_service.user_to_dict(user),
+            "token": token,
+            "message": "Giriş başarılı"
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"[AUTH] Login error: {e}")
+        raise HTTPException(status_code=500, detail=f"Giriş sırasında hata: {str(e)}")
+
+@app.get("/auth/me")
+async def get_current_user_info(
+    current_user = Depends(get_current_user)
+):
+    """
+    Mevcut kullanıcı bilgilerini getir (token ile)
+    """
+    return {
+        "user": auth_service.user_to_dict(current_user),
+        "message": "Kullanıcı bilgileri alındı"
+    }
+
+@app.post("/auth/init-admin")
+async def initialize_admin(db: Session = Depends(get_db)):
+    """
+    İlk admin kullanıcısını oluştur
+    Sadece hiç admin yokken çalışır
+    """
+    try:
+        # Check if admin already exists
+        existing_admin = auth_service.get_user_by_email(db, "admin@exportiq.com")
+        if existing_admin:
+            return {
+                "message": "Admin kullanıcısı zaten mevcut",
+                "admin_email": "admin@exportiq.com"
+            }
+        
+        # Create admin user
+        admin_user = auth_service.create_admin_user(
+            db=db,
+            email="admin@exportiq.com",
+            password="admin123",
+            name="Admin User"
+        )
+        
+        print(f"[AUTH] Admin user created: {admin_user.email}")
+        
+        return {
+            "message": "Admin kullanıcısı oluşturuldu",
+            "admin_email": admin_user.email,
+            "temporary_password": "admin123"
+        }
+        
+    except Exception as e:
+        print(f"[AUTH] Init admin error: {e}")
+        raise HTTPException(status_code=500, detail=f"Admin oluşturma hatası: {str(e)}")
 
 @app.get("/stats")
 async def get_stats():
