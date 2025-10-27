@@ -284,6 +284,8 @@ async def generate_report(request: AIAnalysisRequest):
     - questions: Array of question objects from frontend
     """
     try:
+        print(f"[REPORT] Starting report generation for user {request.user_id}, assessment {request.assessment_id}")
+        
         # Get user responses from database
         user_responses = db_service.get_user_responses(
             request.user_id, 
@@ -291,15 +293,20 @@ async def generate_report(request: AIAnalysisRequest):
         )
         
         if not user_responses:
+            print(f"[REPORT] No responses found for user {request.user_id}, assessment {request.assessment_id}")
             raise HTTPException(
                 status_code=404,
-                detail="No responses found for this assessment"
+                detail="Bu değerlendirme için yanıt bulunamadı. Lütfen önce değerlendirmeyi tamamlayın."
             )
+        
+        print(f"[REPORT] Found {len(user_responses)} responses")
         
         # Determine package type from responses
         package_type = user_responses[0].get("package_type", "combined")
+        print(f"[REPORT] Package type: {package_type}")
         
         # Generate comprehensive report
+        print(f"[REPORT] Generating AI report...")
         report = report_service.generate_comprehensive_report(
             user_id=request.user_id,
             assessment_id=request.assessment_id,
@@ -308,6 +315,8 @@ async def generate_report(request: AIAnalysisRequest):
             package_type=package_type,
             language=request.language
         )
+        
+        print(f"[REPORT] Report generated successfully")
         
         # Convert to dict for JSON serialization
         report_dict = report.model_dump(mode='json')
@@ -318,11 +327,15 @@ async def generate_report(request: AIAnalysisRequest):
         }
         
     except HTTPException as he:
+        print(f"[REPORT] HTTP Exception: {he.detail}")
         raise he
     except Exception as e:
+        import traceback
+        print(f"[REPORT] Error generating report: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
             status_code=500,
-            detail=f"Report generation failed: {str(e)}"
+            detail=f"Rapor oluşturulurken hata: {str(e)}"
         )
 
 @app.get("/stats")

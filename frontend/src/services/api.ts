@@ -126,13 +126,17 @@ export async function getAllUserAssessments(userId: string): Promise<any> {
 }
 
 /**
- * Generate comprehensive AI report
+ * Generate comprehensive AI report with timeout
  */
 export async function generateReport(
   request: GenerateReportRequest,
   questions: any[]
 ): Promise<{ status: string; report: ComprehensiveReport }> {
   try {
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
     const response = await fetch(`${API_BASE_URL}/report/generate`, {
       method: 'POST',
       headers: {
@@ -142,15 +146,21 @@ export async function generateReport(
         ...request,
         questions,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Failed to generate report');
+      throw new Error(error.detail || 'Rapor oluşturulamadı');
     }
 
     return await response.json();
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw new Error('Rapor oluşturma süresi aşıldı. Lütfen tekrar deneyin.');
+    }
     console.error('Error generating report:', error);
     throw error;
   }

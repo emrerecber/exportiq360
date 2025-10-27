@@ -72,11 +72,15 @@ const ComprehensiveReport: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-xl text-gray-700 font-medium">AI Raporunuz Hazırlanıyor...</p>
-          <p className="text-sm text-gray-500 mt-2">Bu işlem birkaç saniye sürebilir</p>
+          <p className="text-xl text-gray-700 font-medium mb-2">AI Raporunuz Hazırlanıyor...</p>
+          <p className="text-sm text-gray-500 mb-4">Sorularınız analiz ediliyor ve AI yorumları oluşturuluyor</p>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+            <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+          </div>
+          <p className="text-xs text-gray-400">Bu işlem 30-60 saniye sürebilir</p>
         </div>
       </div>
     );
@@ -89,12 +93,20 @@ const ComprehensiveReport: React.FC = () => {
           <div className="text-red-500 text-6xl mb-4 text-center">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Rapor Yüklenemedi</h2>
           <p className="text-gray-600 mb-6 text-center">{error || 'Bir hata oluştu'}</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Dashboard'a Dön
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => loadReport()}
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              🔄 Tekrar Dene
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              Dashboard'a Dön
+            </button>
+          </div>
         </div>
       </div>
     );

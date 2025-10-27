@@ -5,14 +5,19 @@ Generates detailed analysis with AI comments for each question
 import os
 from typing import Dict, List, Any
 from datetime import datetime
-import openai
+from openai import OpenAI
 from models import ComprehensiveReport, QuestionAnalysis, ChannelScore
 
 class ReportService:
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.client = None
         if self.api_key:
-            openai.api_key = self.api_key
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+            except Exception as e:
+                print(f"Warning: Could not initialize OpenAI client: {e}")
+                self.client = None
         
         # Channel and category mappings
         self.channel_names = {
@@ -181,10 +186,13 @@ class ReportService:
         question_map: Dict[str, Dict],
         language: str
     ) -> List[QuestionAnalysis]:
-        """Generate AI analysis for each question"""
+        """Generate AI analysis for each question - with optimization"""
         analyses = []
         
-        for resp in responses:
+        # Limit to first 20 questions for faster processing
+        limited_responses = responses[:20] if len(responses) > 20 else responses
+        
+        for resp in limited_responses:
             question = question_map.get(resp["question_id"])
             if not question:
                 continue
@@ -196,13 +204,17 @@ class ReportService:
             # Frontend uses 'categoryId' not 'category'
             category = question.get("categoryId", question.get("category", "general"))
             
-            # Generate AI comment
-            ai_comment = self._generate_ai_comment(
-                question_text, 
-                user_answer, 
-                category,
-                language
-            )
+            # Generate AI comment with fallback
+            try:
+                ai_comment = self._generate_ai_comment(
+                    question_text, 
+                    user_answer, 
+                    category,
+                    language
+                )
+            except Exception as e:
+                print(f"Error generating comment for question {resp['question_id']}: {e}")
+                ai_comment = self._get_fallback_comment(user_answer, language)
             
             analyses.append(QuestionAnalysis(
                 question_id=resp["question_id"],
@@ -223,22 +235,23 @@ class ReportService:
     ) -> str:
         """Generate AI comment for a specific question-answer pair"""
         
-        if not self.api_key:
+        if not self.client:
             return self._get_fallback_comment(answer, language)
         
         try:
             # Prepare prompt
             prompt = self._create_comment_prompt(question, answer, category, language)
             
-            # Call OpenAI API
-            response = openai.chat.completions.create(
+            # Call OpenAI API with timeout
+            response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": self._get_system_prompt(language)},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
-                max_tokens=200
+                max_tokens=150,
+                timeout=10  # 10 second timeout
             )
             
             comment = response.choices[0].message.content.strip()
@@ -317,7 +330,7 @@ Your comments should be brief, constructive, and motivating."""
     ) -> Dict[str, Any]:
         """Generate strategic insights using AI"""
         
-        if not self.api_key:
+        if not self.client:
             return self._get_fallback_insights(channel_scores, category_scores, language)
         
         try:
@@ -331,15 +344,16 @@ Your comments should be brief, constructive, and motivating."""
             
             prompt = self._create_insights_prompt(context, language)
             
-            # Call OpenAI API
-            response = openai.chat.completions.create(
-                model="gpt-4o",
+            # Call OpenAI API with timeout
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",  # Use mini for faster response
                 messages=[
                     {"role": "system", "content": self._get_insights_system_prompt(language)},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
-                max_tokens=1500
+                max_tokens=1200,
+                timeout=20  # 20 second timeout
             )
             
             insights_text = response.choices[0].message.content.strip()
