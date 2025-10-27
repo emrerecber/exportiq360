@@ -538,6 +538,64 @@ async def initialize_admin(db: Session = Depends(get_db)):
         print(f"[AUTH] Init admin error: {e}")
         raise HTTPException(status_code=500, detail=f"Admin oluşturma hatası: {str(e)}")
 
+@app.post("/admin/upgrade-user")
+async def upgrade_user_package(
+    email: str,
+    plan: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Kullanıcının paketini güncelle
+    Requires: email, plan (e_commerce, e_export, combined)
+    """
+    # Only admin can upgrade users
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin kullanıcılar paket güncelleyebilir")
+    
+    try:
+        # Get user
+        user = auth_service.get_user_by_email(db, email)
+        if not user:
+            raise HTTPException(status_code=404, detail=f"Kullanıcı bulunamadı: {email}")
+        
+        # Map plan string to PlanType
+        plan_map = {
+            "e_commerce": PlanType.E_COMMERCE,
+            "e_export": PlanType.E_EXPORT,
+            "combined": PlanType.COMBINED,
+            "free_trial": PlanType.FREE_TRIAL
+        }
+        
+        if plan not in plan_map:
+            raise HTTPException(status_code=400, detail=f"Geçersiz paket: {plan}")
+        
+        # Update user plan
+        from datetime import datetime, timedelta
+        subscription_start = datetime.utcnow()
+        subscription_end = subscription_start + timedelta(days=365)  # 1 year
+        
+        updated_user = auth_service.update_user_plan(
+            db=db,
+            user_id=user.id,
+            plan=plan_map[plan],
+            subscription_start=subscription_start,
+            subscription_end=subscription_end
+        )
+        
+        print(f"[ADMIN] User {email} upgraded to {plan}")
+        
+        return {
+            "message": f"Kullanıcı {email} başarıyla {plan} paketine yükseltildi",
+            "user": auth_service.user_to_dict(updated_user)
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"[ADMIN] Upgrade error: {e}")
+        raise HTTPException(status_code=500, detail=f"Paket güncelleme hatası: {str(e)}")
+
 @app.get("/stats")
 async def get_stats():
     """
