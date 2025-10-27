@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { PLANS } from '../data/plans';
 
 interface CheckoutState {
-  planKey: 'ecommerce' | 'eexport' | 'combined';
+  planKey?: 'ecommerce' | 'eexport' | 'combined' | 'free_trial';
+  selectedPackage?: 'ecommerce' | 'eexport' | 'combined' | 'free_trial';
   promoCode?: string;
 }
 
@@ -13,6 +14,9 @@ const Checkout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const state = location.state as CheckoutState;
+  
+  // Support both planKey and selectedPackage (from pricing page)
+  const planKey = state?.planKey || state?.selectedPackage;
 
   const [loading, setLoading] = useState(false);
   const [promoCode, setPromoCode] = useState(state?.promoCode || '');
@@ -40,16 +44,21 @@ const Checkout: React.FC = () => {
 
   // Redirect if no plan selected
   useEffect(() => {
-    if (!state?.planKey) {
+    if (!planKey) {
       navigate('/pricing');
     }
-  }, [state, navigate]);
+  }, [planKey, navigate]);
 
-  if (!state?.planKey) {
+  if (!planKey || planKey === 'free_trial') {
+    // Free trial doesn't need checkout
+    if (planKey === 'free_trial') {
+      navigate('/free-trial');
+      return null;
+    }
     return null;
   }
 
-  const selectedPlan = PLANS[state.planKey];
+  const selectedPlan = PLANS[planKey];
   const subtotal = selectedPlan.price;
   const discountAmount = (subtotal * discount) / 100;
   const total = subtotal - discountAmount;
@@ -140,7 +149,7 @@ const Checkout: React.FC = () => {
         
         // Ürün detayları
         basketItems: [{
-          id: state.planKey,
+          id: planKey,
           name: selectedPlan.name,
           category1: 'Subscription',
           itemType: 'VIRTUAL',
@@ -166,7 +175,7 @@ const Checkout: React.FC = () => {
       navigate('/dashboard', { 
         state: { 
           paymentSuccess: true,
-          plan: state.planKey 
+          plan: planKey 
         } 
       });
 
