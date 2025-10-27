@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { PLANS } from '../data/plans';
+import { getPlans } from '../utils/planLoader';
 
 const NewPricing = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [billingCycle, setBillingCycle] = useState('onetime'); // Always onetime for this product
+
+  // Load plans from localStorage or defaults
+  const PLANS = getPlans();
 
   // Convert PLANS to package format for this component
   const packages = [

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { PLANS } from '../data/plans';
+import { getPlans } from '../utils/planLoader';
 
 interface CheckoutState {
   planKey?: 'ecommerce' | 'eexport' | 'combined' | 'free_trial';
@@ -14,6 +14,9 @@ const Checkout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const state = location.state as CheckoutState;
+  
+  // Load plans from localStorage or defaults
+  const PLANS = getPlans();
   
   // Support both planKey and selectedPackage (from pricing page)
   const planKey = state?.planKey || state?.selectedPackage;
