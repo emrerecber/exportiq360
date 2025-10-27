@@ -76,11 +76,11 @@ const ComprehensiveReport: React.FC = () => {
         <div className="text-center max-w-md">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
           <p className="text-xl text-gray-700 font-medium mb-2">AI Raporunuz Hazırlanıyor...</p>
-          <p className="text-sm text-gray-500 mb-4">Sorularınız analiz ediliyor ve AI yorumları oluşturuluyor</p>
+          <p className="text-sm text-gray-500 mb-4">Tüm sorularınız analiz ediliyor ve stratejik öneriler oluşturuluyor</p>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
             <div className="bg-indigo-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
           </div>
-          <p className="text-xs text-gray-400">Bu işlem 30-60 saniye sürebilir</p>
+          <p className="text-xs text-gray-400">Bu işlem 15-30 saniye sürebilir</p>
         </div>
       </div>
     );

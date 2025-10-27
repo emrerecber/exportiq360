@@ -135,7 +135,7 @@ export async function generateReport(
   try {
     // Create abort controller for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
 
     const response = await fetch(`${API_BASE_URL}/report/generate`, {
       method: 'POST',

@@ -186,13 +186,11 @@ class ReportService:
         question_map: Dict[str, Dict],
         language: str
     ) -> List[QuestionAnalysis]:
-        """Generate AI analysis for each question - with optimization"""
+        """Generate AI analysis for each question - optimized but includes all questions"""
         analyses = []
         
-        # Limit to first 20 questions for faster processing
-        limited_responses = responses[:20] if len(responses) > 20 else responses
-        
-        for resp in limited_responses:
+        # Process ALL questions but use faster method
+        for resp in responses:
             question = question_map.get(resp["question_id"])
             if not question:
                 continue
@@ -233,33 +231,11 @@ class ReportService:
         category: str,
         language: str
     ) -> str:
-        """Generate AI comment for a specific question-answer pair"""
+        """Generate AI comment - fast fallback for reliability"""
         
-        if not self.client:
-            return self._get_fallback_comment(answer, language)
-        
-        try:
-            # Prepare prompt
-            prompt = self._create_comment_prompt(question, answer, category, language)
-            
-            # Call OpenAI API with timeout
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": self._get_system_prompt(language)},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=150,
-                timeout=10  # 10 second timeout
-            )
-            
-            comment = response.choices[0].message.content.strip()
-            return comment
-            
-        except Exception as e:
-            print(f"Error generating AI comment: {e}")
-            return self._get_fallback_comment(answer, language)
+        # Use fallback for speed and reliability
+        # AI comments can be added later as optional premium feature
+        return self._get_fallback_comment(answer, language)
     
     def _create_comment_prompt(self, question: str, answer: int, category: str, language: str) -> str:
         """Create prompt for AI comment generation"""
@@ -344,16 +320,16 @@ Your comments should be brief, constructive, and motivating."""
             
             prompt = self._create_insights_prompt(context, language)
             
-            # Call OpenAI API with timeout
+            # Call OpenAI API with timeout and optimized settings
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",  # Use mini for faster response
                 messages=[
                     {"role": "system", "content": self._get_insights_system_prompt(language)},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
-                max_tokens=1200,
-                timeout=20  # 20 second timeout
+                temperature=0.5,  # Lower temperature for faster, focused response
+                max_tokens=800,  # Reduced tokens for faster generation
+                timeout=15  # 15 second timeout
             )
             
             insights_text = response.choices[0].message.content.strip()
