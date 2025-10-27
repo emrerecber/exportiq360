@@ -216,11 +216,18 @@ async def payment_webhook(
 # ==================== Assessment Response Endpoints ====================
 
 @app.post("/responses/save")
-async def save_responses(request: SaveResponseRequest):
+async def save_responses(
+    request: SaveResponseRequest,
+    current_user = Depends(get_current_user)
+):
     """
-    Kullanıcının assessment yanıtlarını kaydet
+    Kullanıcının assessment yanıtlarını kaydet (authentication gerekli)
     """
     try:
+        # Verify user can only save their own responses
+        if request.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Sadece kendi yanıtlarınızı kaydedebilirsiniz")
+        
         result = db_service.save_responses_batch(
             user_id=request.user_id,
             user_email=request.user_email,
@@ -246,11 +253,19 @@ async def save_responses(request: SaveResponseRequest):
         )
 
 @app.get("/responses/{user_id}/{assessment_id}")
-async def get_responses(user_id: str, assessment_id: str):
+async def get_responses(
+    user_id: str,
+    assessment_id: str,
+    current_user = Depends(get_current_user)
+):
     """
-    Kullanıcının belirli bir assessment için yanıtlarını getir
+    Kullanıcının belirli bir assessment için yanıtlarını getir (authentication gerekli)
     """
     try:
+        # Verify user can only see their own responses
+        if user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Sadece kendi yanıtlarınızı görebilirsiniz")
+        
         responses = db_service.get_user_responses(user_id, assessment_id)
         
         return {
@@ -268,11 +283,18 @@ async def get_responses(user_id: str, assessment_id: str):
         )
 
 @app.get("/responses/{user_id}")
-async def get_all_user_responses(user_id: str):
+async def get_all_user_responses(
+    user_id: str,
+    current_user = Depends(get_current_user)
+):
     """
-    Kullanıcının tüm assessment'larını getir
+    Kullanıcının tüm assessment'larını getir (authentication gerekli)
     """
     try:
+        # Verify user can only see their own assessments
+        if user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Sadece kendi değerlendirmelerinizi görebilirsiniz")
+        
         assessments = db_service.get_all_user_assessments(user_id)
         
         return {

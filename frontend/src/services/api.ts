@@ -4,6 +4,15 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Helper to get auth headers
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('exportiq_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+}
+
 export interface SaveResponsesRequest {
   user_id: string;
   user_email: string;
@@ -59,9 +68,7 @@ export async function saveResponses(data: SaveResponsesRequest): Promise<any> {
   try {
     const response = await fetch(`${API_BASE_URL}/responses/save`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
 
@@ -84,9 +91,7 @@ export async function getResponses(userId: string, assessmentId: string): Promis
   try {
     const response = await fetch(`${API_BASE_URL}/responses/${userId}/${assessmentId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -108,9 +113,7 @@ export async function getAllUserAssessments(userId: string): Promise<any> {
   try {
     const response = await fetch(`${API_BASE_URL}/responses/${userId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -139,9 +142,7 @@ export async function generateReport(
 
     const response = await fetch(`${API_BASE_URL}/report/generate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         ...request,
         questions,
