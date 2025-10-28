@@ -194,6 +194,56 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Quick Access Cards */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">⚡ Hızlı Erişim</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  onClick={() => navigate('/admin/questions')}
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all border-2 border-transparent hover:border-indigo-500 text-left"
+                >
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                    <span className="text-2xl">📝</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Soru Yönetimi</h4>
+                  <p className="text-sm text-gray-600">Assessment sorularını düzenle</p>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/admin/pricing-management')}
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all border-2 border-transparent hover:border-green-500 text-left"
+                >
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Fiyatlandırma</h4>
+                  <p className="text-sm text-gray-600">Paket fiyatlarını güncelle</p>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/admin/promo-management')}
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all border-2 border-transparent hover:border-orange-500 text-left"
+                >
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                    <span className="text-2xl">🎫</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Kampanyalar</h4>
+                  <p className="text-sm text-gray-600">Promosyon kodları</p>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/admin/social-media')}
+                  className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all border-2 border-transparent hover:border-blue-500 text-left"
+                >
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                    <span className="text-2xl">📱</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Sosyal Medya</h4>
+                  <p className="text-sm text-gray-600">Footer linkleri</p>
+                </button>
+              </div>
+            </div>
+
             {/* Recent Assessments */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Son Değerlendirmeler</h3>

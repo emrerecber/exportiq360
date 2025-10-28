@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import PricingManagement from './pages/admin/PricingManagement';
 import PromoManagement from './pages/admin/PromoManagement';
 import SocialMediaManagement from './pages/admin/SocialMediaManagement';
+import QuestionManagement from './pages/admin/QuestionManagement';
 import Checkout from './pages/Checkout';
 import ReportPage from './pages/ReportPage';
 import ComprehensiveReport from './pages/ComprehensiveReport';
@@ -63,6 +64,7 @@ function App() {
           <Route path="/admin/promo-management" element={<AdminRoute><PromoManagement /></AdminRoute>} />
           <Route path="/admin/social-media" element={<AdminRoute><SocialMediaManagement /></AdminRoute>} />
           <Route path="/admin/invoice-management" element={<AdminRoute><InvoiceManagement /></AdminRoute>} />
+          <Route path="/admin/questions" element={<AdminRoute><QuestionManagement /></AdminRoute>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
         </BrowserRouter>
