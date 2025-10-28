@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PLANS } from '../../data/plans';
@@ -7,19 +7,7 @@ const PricingManagement: React.FC = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
-  
-  // Load plans from localStorage or use default
-  const loadPlans = () => {
-    const savedPlans = localStorage.getItem('customPlans');
-    return savedPlans ? JSON.parse(savedPlans) : PLANS;
-  };
-  
-  const [plans, setPlans] = useState(loadPlans());
-  
-  // Sync to localStorage whenever plans change
-  useEffect(() => {
-    localStorage.setItem('customPlans', JSON.stringify(plans));
-  }, [plans]);
+  const [plans, setPlans] = useState(PLANS);
 
   // TEMPORARILY DISABLED FOR TESTING
   // if (!isAdmin) {
@@ -53,26 +41,16 @@ const PricingManagement: React.FC = () => {
 
   const handleSave = () => {
     if (editingPlan) {
-      const updatedPlans = {
+      setPlans({
         ...plans,
         [editingPlan]: {
           ...plans[editingPlan as keyof typeof plans],
           ...formData
         }
-      };
-      setPlans(updatedPlans);
-      localStorage.setItem('customPlans', JSON.stringify(updatedPlans));
+      });
       setEditingPlan(null);
-      alert('Plan başarıyla güncellendi ve kaydedildi!');
-    }
-  };
-  
-  const handleResetToDefault = () => {
-    if (confirm('Tüm fiyatları varsayılan değerlere sıfırlamak istediğinize emin misiniz?')) {
-      localStorage.removeItem('customPlans');
-      setPlans(PLANS);
-      setEditingPlan(null);
-      alert('Fiyatlar varsayılan değerlere sıfırlandı!');
+      // Gerçek uygulamada API'ye kaydedilecek
+      alert('Plan başarıyla güncellendi!');
     }
   };
 
@@ -96,7 +74,7 @@ const PricingManagement: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
@@ -112,15 +90,6 @@ const PricingManagement: React.FC = () => {
                 <p className="text-sm text-gray-600">Paket fiyatları ve özelliklerini yönetin</p>
               </div>
             </div>
-            <button
-              onClick={handleResetToDefault}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>Varsayılana Dön</span>
-            </button>
           </div>
         </div>
       </div>
