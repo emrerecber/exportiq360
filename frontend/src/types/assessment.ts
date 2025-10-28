@@ -1,6 +1,6 @@
 // E-Ticaret Olgunluk Değerlendirme Sistemi - Type Definitions
 
-export type Channel = 'domestic_website' | 'domestic_marketplace' | 'international_website' | 'global_marketplace' | 'general';
+export type Channel = 'ecommerce' | 'eexport' | 'combined';
 
 export interface Question {
   id: string;

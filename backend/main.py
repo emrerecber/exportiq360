@@ -613,6 +613,251 @@ async def get_stats():
             detail=f"Failed to get stats: {str(e)}"
         )
 
+# ==================== Question Management Endpoints ====================
+
+from db_models import Question
+import uuid
+
+class QuestionCreate(BaseModel):
+    question_text_tr: str
+    question_text_en: str
+    category: str
+    channels: list[str]
+    is_free_trial_question: bool = False
+    order: int
+    weight: float = 1.0
+
+class QuestionUpdate(BaseModel):
+    question_text_tr: str | None = None
+    question_text_en: str | None = None
+    category: str | None = None
+    channels: list[str] | None = None
+    is_free_trial_question: bool | None = None
+    order: int | None = None
+    weight: float | None = None
+    is_active: bool | None = None
+
+@app.get("/admin/questions")
+async def get_all_questions(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    package_type: str | None = None,
+    category: str | None = None,
+    is_active: bool = True
+):
+    """
+    Admin: Tüm soruları listele (filtreleme ile)
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        query = db.query(Question)
+        
+        if is_active is not None:
+            query = query.filter(Question.is_active == is_active)
+        
+        if category:
+            query = query.filter(Question.category == category)
+        
+        questions = query.order_by(Question.order).all()
+        
+        # Filter by package type if specified
+        if package_type:
+            questions = [q for q in questions if package_type in (q.channels or [])]
+        
+        return {
+            "status": "success",
+            "questions": [
+                {
+                    "id": q.id,
+                    "question_text_tr": q.question_text_tr,
+                    "question_text_en": q.question_text_en,
+                    "category": q.category,
+                    "channels": q.channels,
+                    "is_free_trial_question": q.is_free_trial_question,
+                    "order": q.order,
+                    "is_active": q.is_active,
+                    "created_at": q.created_at.isoformat() if q.created_at else None
+                }
+                for q in questions
+            ],
+            "count": len(questions)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sorular getirilemedi: {str(e)}")
+
+@app.post("/admin/questions")
+async def create_question(
+    question_data: QuestionCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Yeni soru oluştur
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        question = Question(
+            id=str(uuid.uuid4()),
+            question_text_tr=question_data.question_text_tr,
+            question_text_en=question_data.question_text_en,
+            category=question_data.category,
+            channels=question_data.channels,
+            is_free_trial_question=question_data.is_free_trial_question,
+            order=question_data.order,
+            is_active=True
+        )
+        
+        db.add(question)
+        db.commit()
+        db.refresh(question)
+        
+        return {
+            "status": "success",
+            "message": "Soru başarıyla oluşturuldu",
+            "question": {
+                "id": question.id,
+                "question_text_tr": question.question_text_tr,
+                "question_text_en": question.question_text_en,
+                "category": question.category,
+                "channels": question.channels,
+                "order": question.order
+            }
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Soru oluşturulamadı: {str(e)}")
+
+@app.put("/admin/questions/{question_id}")
+async def update_question(
+    question_id: str,
+    question_data: QuestionUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Soru güncelle
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        question = db.query(Question).filter(Question.id == question_id).first()
+        if not question:
+            raise HTTPException(status_code=404, detail="Soru bulunamadı")
+        
+        # Update only provided fields
+        if question_data.question_text_tr is not None:
+            question.question_text_tr = question_data.question_text_tr
+        if question_data.question_text_en is not None:
+            question.question_text_en = question_data.question_text_en
+        if question_data.category is not None:
+            question.category = question_data.category
+        if question_data.channels is not None:
+            question.channels = question_data.channels
+        if question_data.is_free_trial_question is not None:
+            question.is_free_trial_question = question_data.is_free_trial_question
+        if question_data.order is not None:
+            question.order = question_data.order
+        if question_data.is_active is not None:
+            question.is_active = question_data.is_active
+        
+        db.commit()
+        db.refresh(question)
+        
+        return {
+            "status": "success",
+            "message": "Soru başarıyla güncellendi",
+            "question": {
+                "id": question.id,
+                "question_text_tr": question.question_text_tr,
+                "question_text_en": question.question_text_en,
+                "category": question.category,
+                "channels": question.channels,
+                "order": question.order,
+                "is_active": question.is_active
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Soru güncellenemedi: {str(e)}")
+
+@app.delete("/admin/questions/{question_id}")
+async def delete_question(
+    question_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Soru sil (soft delete)
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        question = db.query(Question).filter(Question.id == question_id).first()
+        if not question:
+            raise HTTPException(status_code=404, detail="Soru bulunamadı")
+        
+        # Soft delete
+        question.is_active = False
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": "Soru başarıyla silindi"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Soru silinemedi: {str(e)}")
+
+@app.get("/questions")
+async def get_questions_for_package(
+    package_type: str,
+    language: str = "tr",
+    db: Session = Depends(get_db)
+):
+    """
+    Public: Belirli bir paket için soruları getir
+    """
+    try:
+        questions = db.query(Question).filter(
+            Question.is_active == True
+        ).order_by(Question.order).all()
+        
+        # Filter by package type
+        filtered_questions = [
+            q for q in questions 
+            if package_type in (q.channels or [])
+        ]
+        
+        return {
+            "status": "success",
+            "questions": [
+                {
+                    "id": q.id,
+                    "text": {
+                        "tr": q.question_text_tr,
+                        "en": q.question_text_en
+                    },
+                    "categoryId": q.category,
+                    "channels": q.channels,
+                    "order": q.order
+                }
+                for q in filtered_questions
+            ],
+            "count": len(filtered_questions)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sorular getirilemedi: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
