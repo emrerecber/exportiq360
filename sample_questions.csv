@@ -1,0 +1,21 @@
+question_text_tr,question_text_en,category,channels,is_free_trial_question,order
+"Şirketinizin ihracat deneyimi kaç yıldır?","How many years of export experience does your company have?",company_info,"exportiq,gpt",FALSE,1
+"Hangi ülkelere ihracat yapıyorsunuz?","Which countries do you export to?",company_info,"exportiq,gpt",FALSE,2
+"E-ticaret platformunuz var mı?","Do you have an e-commerce platform?",product_service,exportiq,TRUE,3
+"Dijital pazarlama stratejiniz mevcut mu?","Do you have a digital marketing strategy?",market_research,exportiq,TRUE,4
+"Ürünleriniz için uluslararası sertifikalarınız var mı?","Do you have international certifications for your products?",product_service,"exportiq,gpt",FALSE,5
+"Lojistik süreçleriniz dijital olarak yönetiliyor mu?","Are your logistics processes managed digitally?",export_logistics,exportiq,FALSE,6
+"Hedef pazarlarınızda rekabet analizi yapıyor musunuz?","Do you conduct competitive analysis in your target markets?",market_research,"exportiq,gpt",FALSE,7
+"Gümrük işlemlerinizi dijital platformlar üzerinden takip ediyor musunuz?","Do you track your customs procedures through digital platforms?",export_logistics,exportiq,FALSE,8
+"Ürün kataloğunuz çok dilde mevcut mu?","Is your product catalog available in multiple languages?",product_service,exportiq,TRUE,9
+"Online ödeme altyapınız uluslararası ödemeleri destekliyor mu?","Does your online payment infrastructure support international payments?",export_logistics,"exportiq,gpt",FALSE,10
+"Sosyal medyada aktif olarak tanıtım yapıyor musunuz?","Do you actively promote on social media?",market_research,exportiq,TRUE,11
+"İhracat operasyonlarınız için ERP sistemi kullanıyor musunuz?","Do you use an ERP system for your export operations?",product_service,exportiq,FALSE,12
+"Müşteri ilişkileri yönetimi için CRM sisteminiz var mı?","Do you have a CRM system for customer relationship management?",company_info,"exportiq,gpt",FALSE,13
+"E-ihracat için özel bir departmanınız veya ekibiniz var mı?","Do you have a dedicated department or team for e-export?",company_info,exportiq,FALSE,14
+"Ürünleriniz için dijital pazaryerlerinde satış yapıyor musunuz?","Do you sell your products on digital marketplaces?",product_service,exportiq,TRUE,15
+"İhracat için finansman ve kredi imkanlarından yararlanıyor musunuz?","Do you utilize financing and credit opportunities for export?",export_logistics,"exportiq,gpt",FALSE,16
+"Hedef pazarlarınızda tüketici davranışlarını analiz ediyor musunuz?","Do you analyze consumer behavior in your target markets?",market_research,exportiq,FALSE,17
+"Uluslararası e-ticaret platformlarında mağazanız var mı?","Do you have stores on international e-commerce platforms?",product_service,"exportiq,gpt",FALSE,18
+"Dijital ihracat süreçlerinizde veri analitiği kullanıyor musunuz?","Do you use data analytics in your digital export processes?",market_research,exportiq,FALSE,19
+"İade ve değişim süreçleriniz uluslararası standartlara uygun mu?","Are your return and exchange processes compliant with international standards?",export_logistics,exportiq,FALSE,20
