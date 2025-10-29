@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from models import (
@@ -16,6 +17,8 @@ from auth_service import auth_service
 import os
 from dotenv import load_dotenv
 from typing import Optional, List, Dict
+import pandas as pd
+import io
 
 load_dotenv()
 
@@ -817,6 +820,171 @@ async def delete_question(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Soru silinemedi: {str(e)}")
+
+@app.get("/admin/questions/template/download")
+async def download_question_template(
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Excel şablonunu indir
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        # Create sample data
+        sample_data = {
+            "question_text_tr": [
+                "Şirketinizin ihracat deneyimi var mı?",
+                "Dijital pazarlama stratejiniz mevcut mu?"
+            ],
+            "question_text_en": [
+                "Does your company have export experience?",
+                "Do you have a digital marketing strategy?"
+            ],
+            "category": [
+                "company_info",
+                "market_research"
+            ],
+            "channels": [
+                "exportiq,gpt",
+                "exportiq"
+            ],
+            "is_free_trial_question": [
+                "FALSE",
+                "TRUE"
+            ],
+            "order": [1, 2]
+        }
+        
+        df = pd.DataFrame(sample_data)
+        
+        # Create Excel file in memory
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Questions')
+            
+            # Add instructions sheet
+            instructions = pd.DataFrame({
+                "Field": [
+                    "question_text_tr",
+                    "question_text_en",
+                    "category",
+                    "channels",
+                    "is_free_trial_question",
+                    "order"
+                ],
+                "Description": [
+                    "Soru metni (Türkçe)",
+                    "Soru metni (İngilizce)",
+                    "Kategori: company_info, product_service, market_research, export_logistics",
+                    "Kanallar (virgülle ayrılmış): exportiq, gpt, combined",
+                    "Ücretsiz deneme sorusu mu? TRUE veya FALSE",
+                    "Sıralama numarası (integer)"
+                ],
+                "Required": [
+                    "Yes", "Yes", "Yes", "Yes", "No (default: FALSE)", "Yes"
+                ]
+            })
+            instructions.to_excel(writer, index=False, sheet_name='Instructions')
+        
+        output.seek(0)
+        
+        return StreamingResponse(
+            io.BytesIO(output.getvalue()),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=question_template.xlsx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Şablon indirilemedi: {str(e)}")
+
+@app.post("/admin/questions/bulk-import")
+async def bulk_import_questions(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    Admin: Excel/CSV dosyasından toplu soru yükle
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Sadece admin erişebilir")
+    
+    try:
+        # Read file
+        contents = await file.read()
+        
+        # Determine file type and read
+        if file.filename.endswith('.xlsx') or file.filename.endswith('.xls'):
+            df = pd.read_excel(io.BytesIO(contents))
+        elif file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            raise HTTPException(status_code=400, detail="Sadece .xlsx, .xls veya .csv dosyaları desteklenir")
+        
+        # Validate required columns
+        required_columns = ["question_text_tr", "question_text_en", "category", "channels", "order"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Eksik kolonlar: {', '.join(missing_columns)}"
+            )
+        
+        # Process and insert questions
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Parse channels (comma-separated string to list)
+                channels = [ch.strip() for ch in str(row['channels']).split(',')]
+                
+                # Parse is_free_trial_question
+                is_free_trial = False
+                if 'is_free_trial_question' in df.columns:
+                    is_free_trial = str(row['is_free_trial_question']).upper() in ['TRUE', '1', 'YES']
+                
+                # Create question
+                question = Question(
+                    id=str(uuid.uuid4()),
+                    question_text_tr=str(row['question_text_tr']),
+                    question_text_en=str(row['question_text_en']),
+                    category=str(row['category']),
+                    channels=channels,
+                    is_free_trial_question=is_free_trial,
+                    order=int(row['order']),
+                    is_active=True
+                )
+                
+                db.add(question)
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Satır {index + 2}: {str(e)}")
+        
+        # Commit all successful insertions
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Veritabanı hatası: {str(e)}")
+        
+        return {
+            "status": "success",
+            "message": f"{success_count} soru başarıyla yüklendi",
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10]  # Return first 10 errors
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dosya yüklenemedi: {str(e)}")
 
 @app.get("/questions")
 async def get_questions_for_package(

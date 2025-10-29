@@ -114,6 +114,7 @@ export const questions: Question[] = [
       en: 'Does your company have a written e-commerce strategy?'
     },
     weight: 1.5,
+    channels: ['ecommerce', 'eexport', 'combined'],
     isFreeTrialQuestion: true
   },
   {
@@ -124,6 +125,7 @@ export const questions: Question[] = [
       tr: 'E-ticaret hedefleriniz ölçülebilir KPI\'lar ile tanımlanmış mı?',
       en: 'Are your e-commerce goals defined with measurable KPIs?'
     },
+    channels: ['ecommerce', 'eexport', 'combined'],
     isFreeTrialQuestion: true
   },
   {
@@ -133,7 +135,8 @@ export const questions: Question[] = [
     text: {
       tr: 'Rakip analizi düzenli olarak yapılıyor mu?',
       en: 'Is competitor analysis conducted regularly?'
-    }
+    },
+    channels: ['ecommerce', 'eexport', 'combined']
   },
   {
     id: 's4',
@@ -142,7 +145,8 @@ export const questions: Question[] = [
     text: {
       tr: 'Yeni pazarlara giriş stratejiniz var mı?',
       en: 'Do you have a strategy for entering new markets?'
-    }
+    },
+    channels: ['eexport', 'combined']
   },
   {
     id: 's5',
@@ -151,7 +155,8 @@ export const questions: Question[] = [
     text: {
       tr: 'E-ticaret bütçeniz yıllık olarak planlanıyor mu?',
       en: 'Is your e-commerce budget planned annually?'
-    }
+    },
+    channels: ['ecommerce', 'eexport', 'combined']
   },
 
   // TEKNOLOJİ VE ALT YAPI
