@@ -618,7 +618,7 @@ async def get_stats():
 
 # ==================== Question Management Endpoints ====================
 
-from db_models import Question
+from db_models import Question, UserRole, PlanType
 import uuid
 
 class QuestionCreate(BaseModel):
